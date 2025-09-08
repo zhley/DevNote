@@ -106,7 +106,12 @@
         <!-- 主编辑器区域 -->
         <div class="main-editor" :style="{ width: centerWidth + 'px' }">
             <div class="editor-header">
-                <h3>工作区</h3>
+                <div class="date-selector" @click="showDatePicker = true">
+                    <span class="current-date">{{ formatCurrentDate() }}</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="calendar-icon">
+                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.89-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                    </svg>
+                </div>
                 <div class="editor-actions">
                     <el-button size="small" @click="clearAllBlocks">清空所有</el-button>
                     <el-button type="primary" size="small" @click="saveContent">保存</el-button>
@@ -153,6 +158,25 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 日期选择器弹窗 -->
+        <el-dialog 
+            v-model="showDatePicker" 
+            title="选择日期" 
+            width="300px"
+            :modal="true"
+            :close-on-click-modal="true"
+            :close-on-press-escape="true"
+        >
+            <el-date-picker
+                v-model="currentDate"
+                type="date"
+                placeholder="选择日期"
+                style="width: 100%"
+                @change="handleDateChange"
+                :clearable="false"
+            />
+        </el-dialog>
     </div>
 </template>
 <script setup>
@@ -191,6 +215,10 @@ const startLeftWidth = ref(0)
 
 // 侧边栏状态
 const activeTab = ref('todo')
+
+// 日期相关状态
+const currentDate = ref(new Date())
+const showDatePicker = ref(false)
 
 // 计算中间区域宽度
 const centerWidth = computed(() => {
@@ -539,6 +567,25 @@ const formatDate = (date) => {
     return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
+// 格式化当前日期为标题格式
+const formatCurrentDate = () => {
+    const d = new Date(currentDate.value)
+    const year = d.getFullYear()
+    const month = (d.getMonth() + 1).toString().padStart(2, '0')
+    const day = d.getDate().toString().padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+// 处理日期选择
+const handleDateChange = (date) => {
+    currentDate.value = date
+    showDatePicker.value = false
+    // 保存当前日期到localStorage
+    localStorage.setItem('workspace-current-date', date.toISOString())
+    // 可以在这里添加根据日期加载对应内容的逻辑
+    ElMessage.success(`日期已切换到 ${formatCurrentDate()}`)
+}
+
 // 清空编辑器
 const clearEditor = () => {
     blocks.splice(0, blocks.length)
@@ -575,6 +622,12 @@ onMounted(() => {
     const savedActiveTab = localStorage.getItem('workspace-active-tab')
     if (savedActiveTab) {
         activeTab.value = savedActiveTab
+    }
+    
+    // 恢复当前日期
+    const savedDate = localStorage.getItem('workspace-current-date')
+    if (savedDate) {
+        currentDate.value = new Date(savedDate)
     }
     
     // 恢复工作区块数据
@@ -787,6 +840,35 @@ const handleWindowResize = () => {
     margin-bottom: 12px;
     padding-bottom: 8px;
     border-bottom: 1px solid #e1e4e8;
+}
+
+.date-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.date-selector:hover {
+    background-color: #f6f8fa;
+}
+
+.current-date {
+    font-size: 14px;
+    font-weight: 600;
+    color: #24292f;
+}
+
+.calendar-icon {
+    color: #656d76;
+    transition: color 0.15s ease;
+}
+
+.date-selector:hover .calendar-icon {
+    color: #24292f;
 }
 
 .editor-header h3 {
