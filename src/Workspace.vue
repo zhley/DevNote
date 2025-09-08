@@ -665,7 +665,6 @@ const handleWindowResize = () => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 4px 0;
     box-sizing: border-box;
     position: relative;
     overflow: visible;
