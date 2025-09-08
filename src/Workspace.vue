@@ -120,18 +120,8 @@
                     :key="block.id"
                     class="block-item"
                     :class="`block-${block.type}`"
+                    :data-type="getBlockTypeLabel(block.type)"
                 >
-                    <div class="block-header">
-                        <div class="block-type-label">{{ getBlockTypeLabel(block.type) }}</div>
-                        <el-button 
-                            type="danger" 
-                            size="small" 
-                            text
-                            @click="deleteBlock(index)"
-                        >
-                            <el-icon><Delete /></el-icon>
-                        </el-button>
-                    </div>
                     <!-- 编辑模式 -->
                     <div 
                         v-if="isBlockEditing(block.id)"
@@ -386,11 +376,11 @@ const selectIdea = (idea) => {
 // 获取区域类型标签
 const getBlockTypeLabel = (type) => {
     const labels = {
-        progress: '进度',
-        todo: '待办',
-        bug: '缺陷',
-        idea: '灵感', 
-        note: '笔记'
+        progress: 'progress',
+        todo: 'todo',
+        bug: 'bug',
+        idea: 'idea', 
+        note: 'note'
     }
     return labels[type] || type
 }
@@ -532,13 +522,6 @@ const handleGlobalKeydown = (event) => {
 // 处理区域内按键事件
 const handleBlockKeydown = (event, index) => {
     
-}
-
-// 删除区域
-const deleteBlock = (index) => {
-    const blockType = getBlockTypeLabel(blocks[index].type)
-    blocks.splice(index, 1)
-    ElMessage.success(`${blockType}区域已删除`)
 }
 
 // 清空所有区域
@@ -942,10 +925,25 @@ const handleWindowResize = () => {
     border-radius: 6px;
     background: #ffffff;
     transition: border-color 0.15s ease;
+    position: relative;
 }
 
 .block-item:hover {
     border-color: #8b949e;
+}
+
+.block-item::before {
+    content: attr(data-type);
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    background: #ffffff;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: lowercase;
+    letter-spacing: 0.3px;
+    z-index: 1;
 }
 
 .block-header {
@@ -1112,7 +1110,7 @@ const handleWindowResize = () => {
     border-color: #1f883d;
 }
 
-.block-progress .block-type-label {
+.block-progress::before {
     color: #1f883d;
 }
 
@@ -1120,7 +1118,7 @@ const handleWindowResize = () => {
     border-color: #bf8700;
 }
 
-.block-todo .block-type-label {
+.block-todo::before {
     color: #bf8700;
 }
 
@@ -1128,7 +1126,7 @@ const handleWindowResize = () => {
     border-color: #d1242f;
 }
 
-.block-bug .block-type-label {
+.block-bug::before {
     color: #d1242f;
 }
 
@@ -1136,7 +1134,7 @@ const handleWindowResize = () => {
     border-color: #8250df;
 }
 
-.block-idea .block-type-label {
+.block-idea::before {
     color: #8250df;
 }
 
@@ -1144,7 +1142,7 @@ const handleWindowResize = () => {
     border-color: #656d76;
 }
 
-.block-note .block-type-label {
+.block-note::before {
     color: #656d76;
 }
 
