@@ -58,6 +58,12 @@
                                     <ArrowDown />
                                 </el-icon>
                             </div>
+                            <div 
+                                v-if="expandedTodos.has(index)" 
+                                class="todo-details"
+                                v-html="renderMarkdown(todo.content)"
+                            >
+                            </div>
                             <div class="todo-meta">
                                 <el-tag 
                                     :type="getPriorityType(todo.priority)" 
@@ -71,12 +77,6 @@
                                         -{{ formatDateTime(todo.completedAt) }}
                                     </span>
                                 </span>
-                            </div>
-                            <div 
-                                v-if="expandedTodos.has(index)" 
-                                class="todo-details"
-                                v-html="renderMarkdown(todo.content)"
-                            >
                             </div>
                         </div>
                         <el-checkbox 
@@ -1003,7 +1003,6 @@ const handleWindowResize = () => {
     align-items: center;
     cursor: pointer;
     padding: 2px 0;
-    margin-bottom: 6px;
     transition: background-color 0.15s ease;
     border-radius: 3px;
 }
@@ -1035,7 +1034,9 @@ const handleWindowResize = () => {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 4px;
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px solid #f1f3f4;
 }
 
 .todo-dates {
@@ -1055,7 +1056,7 @@ const handleWindowResize = () => {
 }
 
 .todo-details {
-    margin-top: 8px;
+    margin: 8px 0;
     padding: 10px;
     background-color: #f6f8fa;
     border-radius: 4px;
