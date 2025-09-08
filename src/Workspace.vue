@@ -30,6 +30,19 @@
             <div v-if="activeTab === 'todo'" class="todo-list">
                 <div class="section-header">
                     <h3>待办清单</h3>
+                    <div class="header-tools">
+                        <el-button 
+                            size="small" 
+                            text 
+                            @click="toggleAllTodosExpansion"
+                            :title="allTodosExpanded ? '折叠所有详情' : '展开所有详情'"
+                        >
+                            <el-icon>
+                                <MoreFilled v-if="!allTodosExpanded" />
+                                <ArrowUp v-else />
+                            </el-icon>
+                        </el-button>
+                    </div>
                 </div>
                 <div class="todo-items">
                     <div 
@@ -38,12 +51,13 @@
                         class="todo-item"
                         :class="{ 'finished': todo.finished }"
                     >
-                        <el-checkbox 
-                            v-model="todo.finished" 
-                            @change="toggleTodo(index)"
-                        />
                         <div class="todo-content">
-                            <span class="todo-text">{{ todo.content }}</span>
+                            <div class="todo-header" @click="toggleTodoExpansion(index)">
+                                <span class="todo-title">{{ todo.title }}</span>
+                                <el-icon class="expand-icon" :class="{ expanded: expandedTodos.has(index) }">
+                                    <ArrowDown />
+                                </el-icon>
+                            </div>
                             <div class="todo-meta">
                                 <el-tag 
                                     :type="getPriorityType(todo.priority)" 
@@ -51,16 +65,25 @@
                                 >
                                     {{ getPriorityText(todo.priority) }}
                                 </el-tag>
+                                <span class="todo-dates">
+                                    <span class="created-date">{{ formatDateTime(todo.createdAt) }}</span>
+                                    <span v-if="todo.finished && todo.completedAt" class="completed-date">
+                                        -{{ formatDateTime(todo.completedAt) }}
+                                    </span>
+                                </span>
+                            </div>
+                            <div 
+                                v-if="expandedTodos.has(index)" 
+                                class="todo-details"
+                                v-html="renderMarkdown(todo.content)"
+                            >
                             </div>
                         </div>
-                        <el-button 
-                            type="danger" 
-                            size="small" 
-                            text
-                            @click="deleteTodo(index)"
-                        >
-                            <el-icon><Delete /></el-icon>
-                        </el-button>
+                        <el-checkbox 
+                            v-model="todo.finished" 
+                            @change="toggleTodo(index)"
+                            class="todo-checkbox"
+                        />
                     </div>
                 </div>
             </div>
@@ -180,7 +203,7 @@
 </template>
 <script setup>
 import { ref, reactive, nextTick, computed } from 'vue'
-import { Delete } from '@element-plus/icons-vue'
+import { Delete, ArrowDown, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
 
@@ -311,24 +334,34 @@ const generateId = () => {
 // 待办事项数据
 const todos = reactive([
     {
-        content: "完成项目文档编写",
+        title: "完成项目文档编写",
+        content: "需要编写完整的项目文档，包括：\n- 项目介绍和功能说明\n- 安装和使用指南\n- API 文档\n- 常见问题解答",
         priority: 3,
         finished: false,
-        createdAt: new Date()
+        createdAt: new Date('2024-10-11'),
+        completedAt: null
     },
     {
-        content: "优化代码性能",
+        title: "优化代码性能",
+        content: "分析当前代码性能瓶颈：\n- 数据库查询优化\n- 前端资源压缩\n- 缓存策略改进\n- 代码分割和懒加载",
         priority: 2,
         finished: false,
-        createdAt: new Date()
+        createdAt: new Date('2024-10-15'),
+        completedAt: null
     },
     {
-        content: "学习新技术框架",
+        title: "学习新技术框架",
+        content: "深入学习 Vue 3 新特性和相关生态：\n- Composition API 实践\n- Pinia 状态管理\n- Vue Router 4\n- TypeScript 集成",
         priority: 1,
         finished: true,
-        createdAt: new Date()
+        createdAt: new Date('2024-09-20'),
+        completedAt: new Date('2024-11-10')
     }
 ])
+
+// 待办事项展开状态管理
+const expandedTodos = reactive(new Set())
+const allTodosExpanded = ref(false)
 
 // 灵感数据
 const ideas = reactive([
@@ -352,13 +385,47 @@ const ideas = reactive([
 // 切换待办事项完成状态
 const toggleTodo = (index) => {
     const todo = todos[index]
-    ElMessage.success(todo.finished ? '任务已完成！' : '任务已标记为未完成')
+    if (todo.finished) {
+        todo.completedAt = null
+        ElMessage.success('任务已标记为未完成')
+    } else {
+        todo.completedAt = new Date()
+        ElMessage.success('任务已完成！')
+    }
 }
 
-// 删除待办事项
-const deleteTodo = (index) => {
-    todos.splice(index, 1)
-    ElMessage.success('待办事项已删除')
+// 切换待办事项详情展开状态
+const toggleTodoExpansion = (index) => {
+    if (expandedTodos.has(index)) {
+        expandedTodos.delete(index)
+    } else {
+        expandedTodos.add(index)
+    }
+}
+
+// 全部展开/收起待办事项详情
+const toggleAllTodosExpansion = () => {
+    if (allTodosExpanded.value) {
+        // 收起全部
+        expandedTodos.clear()
+        allTodosExpanded.value = false
+    } else {
+        // 展开全部
+        todos.forEach((_, index) => {
+            expandedTodos.add(index)
+        })
+        allTodosExpanded.value = true
+    }
+}
+
+// 格式化日期显示
+const formatDateTime = (date) => {
+    if (!date) return ''
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}.${month}.${day}`
 }
 
 // 获取优先级类型
@@ -900,12 +967,11 @@ const handleWindowResize = () => {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    padding: 8px;
-    margin-bottom: 4px;
+    padding: 10px;
+    margin-bottom: 6px;
     border: 1px solid #e1e4e8;
     border-radius: 4px;
     transition: all 0.15s ease;
-    cursor: pointer;
     font-size: 13px;
     background: #ffffff;
 }
@@ -921,7 +987,7 @@ const handleWindowResize = () => {
     border-color: #c7d2fe;
 }
 
-.todo-item.finished .todo-text {
+.todo-item.finished .todo-title {
     text-decoration: line-through;
     color: #656d76;
 }
@@ -931,18 +997,145 @@ const handleWindowResize = () => {
     min-width: 0;
 }
 
-.todo-text {
-    display: block;
-    font-size: 13px;
-    line-height: 1.4;
+.todo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 2px 0;
+    margin-bottom: 6px;
+    transition: background-color 0.15s ease;
+    border-radius: 3px;
+}
+
+.todo-header:hover {
+    background-color: #f6f8fa;
+    padding: 2px 6px;
+}
+
+.todo-title {
+    font-size: 14px;
+    font-weight: 500;
     color: #24292f;
-    margin-bottom: 2px;
-    word-wrap: break-word;
+    flex: 1;
+}
+
+.expand-icon {
+    color: #656d76;
+    transition: all 0.15s ease;
+    font-size: 12px;
+    margin-left: 6px;
+}
+
+.expand-icon.expanded {
+    transform: rotate(180deg);
 }
 
 .todo-meta {
     display: flex;
-    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.todo-dates {
+    font-size: 11px;
+    color: #656d76;
+    display: flex;
+    align-items: center;
+}
+
+.created-date {
+    color: #656d76;
+}
+
+.completed-date {
+    color: #1f883d;
+    font-weight: 500;
+}
+
+.todo-details {
+    margin-top: 8px;
+    padding: 10px;
+    background-color: #f6f8fa;
+    border-radius: 4px;
+    border-left: 3px solid #0969da;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #24292f;
+}
+
+.todo-checkbox {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.header-tools {
+    display: flex;
+    gap: 4px;
+}
+
+.header-tools .el-button {
+    padding: 2px 4px;
+    font-size: 12px;
+}
+
+/* 待办清单详情的markdown渲染样式 */
+.todo-details :deep(h1),
+.todo-details :deep(h2),
+.todo-details :deep(h3),
+.todo-details :deep(h4),
+.todo-details :deep(h5),
+.todo-details :deep(h6) {
+    margin: 0.5em 0 0.3em 0;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.todo-details :deep(h1) { font-size: 1.1em; }
+.todo-details :deep(h2) { font-size: 1.05em; }
+.todo-details :deep(h3) { font-size: 1em; }
+.todo-details :deep(h4) { font-size: 0.95em; }
+.todo-details :deep(h5) { font-size: 0.9em; }
+.todo-details :deep(h6) { font-size: 0.85em; }
+
+.todo-details :deep(p) {
+    margin: 0.3em 0;
+    line-height: 1.4;
+}
+
+.todo-details :deep(ul),
+.todo-details :deep(ol) {
+    margin: 0.3em 0;
+    padding-left: 1.2em;
+}
+
+.todo-details :deep(li) {
+    margin: 0.1em 0;
+    line-height: 1.3;
+}
+
+.todo-details :deep(code) {
+    background: #e6f3ff;
+    padding: 0.1em 0.2em;
+    border-radius: 2px;
+    font-size: 0.9em;
+}
+
+.todo-details :deep(pre) {
+    background: #f1f3f4;
+    padding: 0.4em;
+    border-radius: 3px;
+    overflow-x: auto;
+    margin: 0.3em 0;
+}
+
+.todo-details :deep(blockquote) {
+    margin: 0.3em 0;
+    padding: 0.2em 0.4em;
+    border-left: 3px solid #d1d9e0;
+    background: #f8f9fa;
+    color: #656d76;
 }
 
 /* 灵感池样式 */
