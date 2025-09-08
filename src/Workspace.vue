@@ -1,45 +1,103 @@
 <template>
     <div class="workspace" :style="workspaceStyle">
-        <!-- 待办清单区域 -->
-        <div class="todo-list" :style="{ width: leftWidth + 'px' }">
-            <div class="section-header">
-                <h3>待办清单</h3>
+        <!-- 左侧工具栏 -->
+        <div class="sidebar-toolbar">
+            <div 
+                class="toolbar-item"
+                :class="{ active: activeTab === 'todo' }"
+                @click="setActiveTab('todo')"
+                title="待办清单"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                </svg>
             </div>
-            <div class="todo-items">
-                <div 
-                    v-for="(todo, index) in todos" 
-                    :key="index"
-                    class="todo-item"
-                    :class="{ 'finished': todo.finished }"
-                >
-                    <el-checkbox 
-                        v-model="todo.finished" 
-                        @change="toggleTodo(index)"
-                    />
-                    <div class="todo-content">
-                        <span class="todo-text">{{ todo.content }}</span>
-                        <div class="todo-meta">
-                            <el-tag 
-                                :type="getPriorityType(todo.priority)" 
-                                size="small"
+            <div 
+                class="toolbar-item"
+                :class="{ active: activeTab === 'idea' }"
+                @click="setActiveTab('idea')"
+                title="灵感池"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- 左侧内容区域 -->
+        <div class="sidebar-content" :style="{ width: leftWidth + 'px' }">
+            <!-- 待办清单区域 -->
+            <div v-if="activeTab === 'todo'" class="todo-list">
+                <div class="section-header">
+                    <h3>待办清单</h3>
+                </div>
+                <div class="todo-items">
+                    <div 
+                        v-for="(todo, index) in todos" 
+                        :key="index"
+                        class="todo-item"
+                        :class="{ 'finished': todo.finished }"
+                    >
+                        <el-checkbox 
+                            v-model="todo.finished" 
+                            @change="toggleTodo(index)"
+                        />
+                        <div class="todo-content">
+                            <span class="todo-text">{{ todo.content }}</span>
+                            <div class="todo-meta">
+                                <el-tag 
+                                    :type="getPriorityType(todo.priority)" 
+                                    size="small"
+                                >
+                                    {{ getPriorityText(todo.priority) }}
+                                </el-tag>
+                            </div>
+                        </div>
+                        <el-button 
+                            type="danger" 
+                            size="small" 
+                            text
+                            @click="deleteTodo(index)"
+                        >
+                            <el-icon><Delete /></el-icon>
+                        </el-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 灵感池区域 -->
+            <div v-if="activeTab === 'idea'" class="idea-pool">
+                <div class="section-header">
+                    <h3>灵感池</h3>
+                </div>
+                <div class="idea-items">
+                    <div 
+                        v-for="(idea, index) in ideas" 
+                        :key="index"
+                        class="idea-item"
+                        @click="selectIdea(idea)"
+                    >
+                        <div class="idea-header">
+                            <h4>{{ idea.title }}</h4>
+                            <el-button 
+                                type="danger" 
+                                size="small" 
+                                text
+                                @click.stop="deleteIdea(index)"
                             >
-                                {{ getPriorityText(todo.priority) }}
-                            </el-tag>
+                                <el-icon><Delete /></el-icon>
+                            </el-button>
+                        </div>
+                        <p class="idea-content">{{ idea.content }}</p>
+                        <div class="idea-footer">
+                            <span class="idea-date">{{ formatDate(idea.createdAt) }}</span>
                         </div>
                     </div>
-                    <el-button 
-                        type="danger" 
-                        size="small" 
-                        text
-                        @click="deleteTodo(index)"
-                    >
-                        <el-icon><Delete /></el-icon>
-                    </el-button>
                 </div>
             </div>
         </div>
 
-        <!-- 左侧分隔线 -->
+        <!-- 分隔线 -->
         <div 
             class="resizer left-resizer" 
             @mousedown="startResize('left', $event)"
@@ -105,43 +163,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- 右侧分隔线 -->
-        <div 
-            class="resizer right-resizer" 
-            @mousedown="startResize('right', $event)"
-        ></div>
-
-        <!-- 灵感池区域 -->
-        <div class="idea-pool" :style="{ width: rightWidth + 'px' }">
-            <div class="section-header">
-                <h3>灵感池</h3>
-            </div>
-            <div class="idea-items">
-                <div 
-                    v-for="(idea, index) in ideas" 
-                    :key="index"
-                    class="idea-item"
-                    @click="selectIdea(idea)"
-                >
-                    <div class="idea-header">
-                        <h4>{{ idea.title }}</h4>
-                        <el-button 
-                            type="danger" 
-                            size="small" 
-                            text
-                            @click.stop="deleteIdea(index)"
-                        >
-                            <el-icon><Delete /></el-icon>
-                        </el-button>
-                    </div>
-                    <p class="idea-content">{{ idea.content }}</p>
-                    <div class="idea-footer">
-                        <span class="idea-date">{{ formatDate(idea.createdAt) }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 <script setup>
@@ -172,24 +193,32 @@ const editingBlockId = ref(null)
 const blockRefs = new Map()
 
 // 宽度调整相关状态
-const leftWidth = ref(260)
-const rightWidth = ref(280)
+const leftWidth = ref(280)
 const isResizing = ref(false)
 const resizingType = ref('')
 const startX = ref(0)
 const startLeftWidth = ref(0)
-const startRightWidth = ref(0)
+
+// 侧边栏状态
+const activeTab = ref('todo')
 
 // 计算中间区域宽度
 const centerWidth = computed(() => {
     const totalWidth = window.innerWidth || 1200
-    return totalWidth - leftWidth.value - rightWidth.value - 2 // 2px for two 1px resizers
+    return totalWidth - 48 - leftWidth.value - 1 // 48px toolbar + 1px resizer
 })
 
 // 计算workspace样式
 const workspaceStyle = computed(() => ({
-    gridTemplateColumns: `${leftWidth.value}px 1px ${centerWidth.value}px 1px ${rightWidth.value}px`
+    gridTemplateColumns: `48px ${leftWidth.value}px 1px 1fr`
 }))
+
+// 设置活动标签
+const setActiveTab = (tab) => {
+    activeTab.value = tab
+    // 保存当前活动标签到localStorage
+    localStorage.setItem('workspace-active-tab', tab)
+}
 
 // 开始调整大小
 const startResize = (type, event) => {
@@ -197,7 +226,6 @@ const startResize = (type, event) => {
     resizingType.value = type
     startX.value = event.clientX
     startLeftWidth.value = leftWidth.value
-    startRightWidth.value = rightWidth.value
     
     document.addEventListener('mousemove', handleResize)
     document.addEventListener('mouseup', stopResize)
@@ -213,14 +241,11 @@ const handleResize = (event) => {
     
     const deltaX = event.clientX - startX.value
     const minWidth = 200
-    const maxWidth = window.innerWidth - 400 // 保留最小400px给其他区域
+    const maxWidth = window.innerWidth - 300 // 保留最小300px给主编辑器
     
     if (resizingType.value === 'left') {
         const newWidth = Math.max(minWidth, Math.min(maxWidth, startLeftWidth.value + deltaX))
         leftWidth.value = newWidth
-    } else if (resizingType.value === 'right') {
-        const newWidth = Math.max(minWidth, Math.min(maxWidth, startRightWidth.value - deltaX))
-        rightWidth.value = newWidth
     }
 }
 
@@ -235,8 +260,7 @@ const stopResize = () => {
     
     // 保存宽度设置到localStorage
     localStorage.setItem('workspace-widths', JSON.stringify({
-        leftWidth: leftWidth.value,
-        rightWidth: rightWidth.value
+        leftWidth: leftWidth.value
     }))
 }
 
@@ -558,11 +582,16 @@ onMounted(() => {
     if (savedWidths) {
         try {
             const widths = JSON.parse(savedWidths)
-            leftWidth.value = widths.leftWidth || 260
-            rightWidth.value = widths.rightWidth || 280
+            leftWidth.value = widths.leftWidth || 280
         } catch (error) {
             console.warn('恢复宽度设置失败:', error)
         }
+    }
+    
+    // 恢复活动标签
+    const savedActiveTab = localStorage.getItem('workspace-active-tab')
+    if (savedActiveTab) {
+        activeTab.value = savedActiveTab
     }
     
     // 恢复工作区块数据
@@ -602,16 +631,12 @@ const handleWindowResize = () => {
     
     if (totalWidth < minTotalWidth) {
         leftWidth.value = 200
-        rightWidth.value = 200
     } else {
         // 如果窗口变小，按比例调整
-        const currentTotal = leftWidth.value + rightWidth.value
-        const maxAllowed = totalWidth - 200 // 保留200px给中间区域
+        const maxAllowed = totalWidth - 300 // 保留300px给主编辑器和工具栏
         
-        if (currentTotal > maxAllowed) {
-            const ratio = maxAllowed / currentTotal
-            leftWidth.value = Math.max(200, leftWidth.value * ratio)
-            rightWidth.value = Math.max(200, rightWidth.value * ratio)
+        if (leftWidth.value > maxAllowed) {
+            leftWidth.value = Math.max(200, maxAllowed)
         }
     }
 }
@@ -620,7 +645,7 @@ const handleWindowResize = () => {
 <style scoped>
 .workspace {
     display: grid;
-    grid-template-columns: 260px 1px 1fr 1px 280px;
+    grid-template-columns: 48px 280px 1px 1fr;
     height: 100vh;
     width: 100vw;
     gap: 0;
@@ -630,6 +655,63 @@ const handleWindowResize = () => {
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     overflow: hidden;
+}
+
+/* 浅色调的侧边工具栏 */
+.sidebar-toolbar {
+    width: 48px;
+    background: #f8f8f8;
+    border-right: 1px solid #e8e8e8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    box-sizing: border-box;
+}
+
+.toolbar-item {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    color: #666666;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.toolbar-item:hover {
+    background: #e8e8e8;
+    color: #333333;
+}
+
+.toolbar-item.active {
+    background: #e1f5fe;
+    color: #1976d2;
+}
+
+.toolbar-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #1976d2;
+    border-radius: 0 1px 1px 0;
+}
+
+/* 侧边栏内容区域 */
+.sidebar-content {
+    background: #ffffff;
+    border-right: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 /* 分隔线样式 */
@@ -678,12 +760,12 @@ const handleWindowResize = () => {
 .todo-list,
 .idea-pool {
     background: #ffffff;
-    border-right: none;
     padding: 16px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     box-sizing: border-box;
+    height: 100%;
 }
 
 .main-editor {
@@ -1096,30 +1178,49 @@ const handleWindowResize = () => {
 /* 响应式设计 - 简化桌面应用版本 */
 @media (max-width: 1024px) {
     .workspace {
-        grid-template-columns: 240px 1px 1fr 1px 260px;
+        grid-template-columns: 48px 240px 1px 1fr;
     }
 }
 
 @media (max-width: 768px) {
     .workspace {
         grid-template-columns: 1fr;
-        grid-template-rows: 200px 200px 1fr;
+        grid-template-rows: auto 1fr;
         height: 100vh;
+    }
+    
+    .sidebar-toolbar {
+        width: 100%;
+        height: 48px;
+        flex-direction: row;
+        justify-content: center;
+        padding: 4px 0;
+    }
+    
+    .toolbar-item {
+        margin-bottom: 0;
+        margin-right: 4px;
+    }
+    
+    .toolbar-item.active::before {
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: auto;
+        width: auto;
+        height: 2px;
+        border-radius: 0 0 1px 1px;
+    }
+    
+    .sidebar-content {
+        width: 100% !important;
     }
     
     .resizer {
         display: none;
     }
     
-    .todo-list,
-    .idea-pool {
-        border-right: none;
-        border-bottom: 1px solid #e1e4e8;
-        width: 100% !important;
-    }
-    
     .main-editor {
-        border: none;
         width: 100% !important;
     }
 }
