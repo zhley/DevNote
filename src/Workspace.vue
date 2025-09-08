@@ -51,12 +51,9 @@
                         class="todo-item"
                         :class="{ 'finished': todo.finished }"
                     >
-                        <div class="todo-content">
-                            <div class="todo-header" @click="toggleTodoExpansion(index)">
+                        <div class="todo-content" @click="toggleTodoExpansion(index)">
+                            <div class="todo-header">
                                 <span class="todo-title">{{ todo.title }}</span>
-                                <el-icon class="expand-icon" :class="{ expanded: expandedTodos.has(index) }">
-                                    <ArrowDown />
-                                </el-icon>
                             </div>
                             <div 
                                 v-if="expandedTodos.has(index)" 
@@ -82,6 +79,7 @@
                         <el-checkbox 
                             v-model="todo.finished" 
                             @change="toggleTodo(index)"
+                            @click.stop
                             class="todo-checkbox"
                         />
                     </div>
@@ -203,7 +201,7 @@
 </template>
 <script setup>
 import { ref, reactive, nextTick, computed } from 'vue'
-import { Delete, ArrowDown, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
+import { Delete, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
 
@@ -977,7 +975,6 @@ const handleWindowResize = () => {
 }
 
 .todo-item:hover {
-    background-color: #f6f8fa;
     border-color: #d0d7de;
 }
 
@@ -995,21 +992,23 @@ const handleWindowResize = () => {
 .todo-content {
     flex: 1;
     min-width: 0;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    border-radius: 3px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+}
+
+.todo-content:hover {
+    background-color: #f6f8fa;
 }
 
 .todo-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: pointer;
     padding: 2px 0;
-    transition: background-color 0.15s ease;
     border-radius: 3px;
-}
-
-.todo-header:hover {
-    background-color: #f6f8fa;
-    padding: 2px 6px;
 }
 
 .todo-title {
@@ -1017,17 +1016,6 @@ const handleWindowResize = () => {
     font-weight: 500;
     color: #24292f;
     flex: 1;
-}
-
-.expand-icon {
-    color: #656d76;
-    transition: all 0.15s ease;
-    font-size: 12px;
-    margin-left: 6px;
-}
-
-.expand-icon.expanded {
-    transform: rotate(180deg);
 }
 
 .todo-meta {
