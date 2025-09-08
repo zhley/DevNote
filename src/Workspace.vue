@@ -929,7 +929,7 @@ onUnmounted(() => {
     }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 768px) {
     .workspace {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto 1fr;
@@ -945,9 +945,7 @@ onUnmounted(() => {
     .main-editor {
         min-height: 400px;
     }
-}
-
-@media (max-width: 768px) {
+    
     .workspace {
         padding: 12px;
         gap: 12px;
