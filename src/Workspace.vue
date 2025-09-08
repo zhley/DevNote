@@ -514,7 +514,6 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    height: 100vh;
 }
 
 .main-editor {
@@ -523,7 +522,6 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    height: 100vh;
 }
 
 /* 区域头部样式 */
