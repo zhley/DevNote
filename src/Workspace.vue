@@ -665,18 +665,20 @@ const handleWindowResize = () => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 0;
+    padding: 4px 0;
     box-sizing: border-box;
+    position: relative;
+    overflow: visible;
 }
 
 .toolbar-item {
-    width: 40px;
+    width: 48px;
     height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 0;
     margin-bottom: 4px;
     color: #666666;
     transition: all 0.15s ease;
@@ -691,6 +693,7 @@ const handleWindowResize = () => {
 .toolbar-item.active {
     background: #e1f5fe;
     color: #1976d2;
+    position: relative;
 }
 
 .toolbar-item.active::before {
@@ -701,7 +704,7 @@ const handleWindowResize = () => {
     bottom: 0;
     width: 2px;
     background: #1976d2;
-    border-radius: 0 1px 1px 0;
+    z-index: 10;
 }
 
 /* 侧边栏内容区域 */
