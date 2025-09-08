@@ -897,20 +897,23 @@ const handleWindowResize = () => {
     gap: 8px;
     padding: 8px;
     margin-bottom: 4px;
-    border: none;
+    border: 1px solid #e1e4e8;
     border-radius: 4px;
-    transition: background-color 0.15s ease;
+    transition: all 0.15s ease;
     cursor: pointer;
     font-size: 13px;
+    background: #ffffff;
 }
 
 .todo-item:hover {
     background-color: #f6f8fa;
+    border-color: #d0d7de;
 }
 
 .todo-item.finished {
     opacity: 0.6;
     background: #f0f9ff;
+    border-color: #c7d2fe;
 }
 
 .todo-item.finished .todo-text {
@@ -946,15 +949,17 @@ const handleWindowResize = () => {
 .idea-item {
     padding: 10px;
     margin-bottom: 6px;
-    border: none;
+    border: 1px solid #e1e4e8;
     border-radius: 4px;
-    transition: background-color 0.15s ease;
+    transition: all 0.15s ease;
     cursor: pointer;
     font-size: 13px;
+    background: #ffffff;
 }
 
 .idea-item:hover {
     background-color: #f6f8fa;
+    border-color: #d0d7de;
 }
 
 .idea-header {
