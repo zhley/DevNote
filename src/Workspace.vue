@@ -75,7 +75,6 @@
                         v-for="(idea, index) in ideas" 
                         :key="index"
                         class="idea-item"
-                        @click="selectIdea(idea)"
                     >
                         <div class="idea-header">
                             <h4>{{ idea.title }}</h4>
@@ -388,19 +387,6 @@ const deleteIdea = (index) => {
     ElMessage.success('灵感已删除')
 }
 
-// 选择灵感（将灵感内容添加到编辑器）
-const selectIdea = (idea) => {
-    // 创建一个新的idea区域，使用纯文本格式
-    const newBlock = {
-        id: generateId(),
-        type: 'idea',
-        content: `${idea.title}\n\n${idea.content}`,
-        createdAt: new Date()
-    }
-    blocks.push(newBlock)
-    ElMessage.success('灵感已添加到工作区')
-}
-
 // 获取区域类型标签
 const getBlockTypeLabel = (type) => {
     const labels = {
@@ -549,7 +535,26 @@ const handleGlobalKeydown = (event) => {
 
 // 处理区域内按键事件
 const handleBlockKeydown = (event, index) => {
-    
+    // 检查是否按下了退格键或删除键
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+        const target = event.target
+        const content = target.textContent || target.innerText || ''
+        
+        // 如果内容为空，删除这个block
+        if (content.trim() === '') {
+            event.preventDefault()
+            
+            // 获取block信息用于提示
+            const block = blocks[index]
+            const blockType = getBlockTypeLabel(block.type)
+            
+            // 删除block
+            blocks.splice(index, 1)
+            editingBlockId.value = null
+            
+            ElMessage.success(`${blockType}区域已删除`)
+        }
+    }
 }
 
 // 清空所有区域
@@ -952,7 +957,6 @@ const handleWindowResize = () => {
     border: 1px solid #e1e4e8;
     border-radius: 4px;
     transition: all 0.15s ease;
-    cursor: pointer;
     font-size: 13px;
     background: #ffffff;
 }
