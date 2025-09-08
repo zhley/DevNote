@@ -496,35 +496,34 @@ onUnmounted(() => {
 <style scoped>
 .workspace {
     display: grid;
-    grid-template-columns: 280px 1fr 320px;
-    grid-template-rows: 95vh;
-    gap: 20px;
-    height: 98vh;
-    padding: 20px;
-    background: #f5f7fa;
+    grid-template-columns: 260px 1fr 280px;
+    height: 100vh;
+    gap: 0;
+    padding: 0;
+    background: #f8f9fa;
     box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
 
 /* 通用区域样式 */
 .todo-list,
 .idea-pool {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    border-right: 1px solid #e1e4e8;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    height: 100vh;
 }
 
 .main-editor {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    height: 100vh;
 }
 
 /* 区域头部样式 */
@@ -532,37 +531,41 @@ onUnmounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e4e7ed;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e1e4e8;
 }
 
 .section-header h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
-    color: #303133;
+    color: #24292f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .editor-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e4e7ed;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e1e4e8;
 }
 
 .editor-header h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
-    color: #303133;
+    color: #24292f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .editor-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 /* 待办事项样式 */
@@ -574,18 +577,18 @@ onUnmounted(() => {
 .todo-item {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 12px;
-    margin-bottom: 8px;
-    border: 1px solid #e4e7ed;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    gap: 8px;
+    padding: 8px;
+    margin-bottom: 4px;
+    border: none;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
     cursor: pointer;
+    font-size: 13px;
 }
 
 .todo-item:hover {
-    border-color: #409eff;
-    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+    background-color: #f6f8fa;
 }
 
 .todo-item.finished {
@@ -595,7 +598,7 @@ onUnmounted(() => {
 
 .todo-item.finished .todo-text {
     text-decoration: line-through;
-    color: #909399;
+    color: #656d76;
 }
 
 .todo-content {
@@ -605,10 +608,10 @@ onUnmounted(() => {
 
 .todo-text {
     display: block;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #303133;
-    margin-bottom: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #24292f;
+    margin-bottom: 2px;
     word-wrap: break-word;
 }
 
@@ -624,18 +627,17 @@ onUnmounted(() => {
 }
 
 .idea-item {
-    padding: 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e4e7ed;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    padding: 10px;
+    margin-bottom: 6px;
+    border: none;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
     cursor: pointer;
+    font-size: 13px;
 }
 
 .idea-item:hover {
-    border-color: #67c23a;
-    box-shadow: 0 2px 8px rgba(103, 194, 58, 0.1);
-    transform: translateY(-1px);
+    background-color: #f6f8fa;
 }
 
 .idea-header {
@@ -647,19 +649,19 @@ onUnmounted(() => {
 
 .idea-header h4 {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    color: #303133;
+    color: #24292f;
 }
 
 .idea-content {
-    font-size: 14px;
-    color: #606266;
-    line-height: 1.6;
-    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #656d76;
+    line-height: 1.4;
+    margin: 4px 0 6px 0;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -679,33 +681,33 @@ onUnmounted(() => {
 .blocks-container {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 0;
+    padding: 4px 0;
 }
 
 .block-item {
-    margin-bottom: 16px;
-    border: 1px solid #e4e7ed;
-    border-radius: 8px;
-    background: white;
-    transition: all 0.3s ease;
+    margin-bottom: 12px;
+    border: 1px solid #d1d9e0;
+    border-radius: 6px;
+    background: #ffffff;
+    transition: border-color 0.15s ease;
 }
 
 .block-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-color: #8b949e;
 }
 
 .block-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e4e7ed;
-    border-radius: 6px 6px 0 0;
+    padding: 6px 10px;
+    background: #f6f8fa;
+    border-bottom: 1px solid #d1d9e0;
+    border-radius: 5px 5px 0 0;
 }
 
 .block-type-label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -713,32 +715,31 @@ onUnmounted(() => {
 
 .block-content {
     min-height: 20px;
-    padding: 16px;
-    font-size: 14px;
+    padding: 12px;
+    font-size: 13px;
     outline: none;
     cursor: text;
-    transition: all 0.2s ease;
+    transition: background-color 0.15s ease;
+    line-height: 1.5;
 }
 
 .block-content.editing {
-    background: #fafafa;
-    border: 1px solid #409eff;
-    border-radius: 4px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    white-space: pre-wrap; /* 保留换行和空白 */
-    word-wrap: break-word; /* 长单词换行 */
-    line-height: 1.5; /* 编辑模式使用舒适的行间距 */
+    background: #f6f8fa;
+    border: 1px solid #0969da;
+    border-radius: 3px;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .block-content.preview {
     cursor: pointer;
-    white-space: pre-wrap; /* 保留换行和空白 */
-    word-wrap: break-word; /* 长单词换行 */
-    line-height: 1.0; /* 预览模式使用紧凑的行间距 */
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .block-content.preview:hover {
-    background: #f8f9fa;
+    background: #f6f8fa;
 }
 
 /* Markdown渲染样式 */
@@ -851,154 +852,135 @@ onUnmounted(() => {
 }
 
 .command-input {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid #e4e7ed;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #d1d9e0;
 }
 
-/* 不同类型区域的颜色主题 */
+/* 不同类型区域的颜色主题 - 使用GitHub风格的颜色 */
 .block-progress {
-    border-color: #409eff;
+    border-color: #1f883d;
 }
 
 .block-progress .block-type-label {
-    color: #409eff;
+    color: #1f883d;
 }
 
 .block-todo {
-    border-color: #67c23a;
+    border-color: #bf8700;
 }
 
 .block-todo .block-type-label {
-    color: #67c23a;
+    color: #bf8700;
 }
 
 .block-bug {
-    border-color: #f56c6c;
+    border-color: #d1242f;
 }
 
 .block-bug .block-type-label {
-    color: #f56c6c;
+    color: #d1242f;
 }
 
 .block-idea {
-    border-color: #e6a23c;
+    border-color: #8250df;
 }
 
 .block-idea .block-type-label {
-    color: #e6a23c;
+    color: #8250df;
 }
 
 .block-note {
-    border-color: #909399;
+    border-color: #656d76;
 }
 
 .block-note .block-type-label {
-    color: #909399;
+    color: #656d76;
 }
 
-/* 滚动条样式 */
+/* 滚动条样式 - 桌面应用风格 */
 .todo-items::-webkit-scrollbar,
-.idea-items::-webkit-scrollbar {
-    width: 6px;
+.idea-items::-webkit-scrollbar,
+.blocks-container::-webkit-scrollbar {
+    width: 8px;
 }
 
 .todo-items::-webkit-scrollbar-track,
-.idea-items::-webkit-scrollbar-track {
-    background: #f5f7fa;
-    border-radius: 3px;
+.idea-items::-webkit-scrollbar-track,
+.blocks-container::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .todo-items::-webkit-scrollbar-thumb,
-.idea-items::-webkit-scrollbar-thumb {
-    background: #c0c4cc;
-    border-radius: 3px;
+.idea-items::-webkit-scrollbar-thumb,
+.blocks-container::-webkit-scrollbar-thumb {
+    background: #d1d9e0;
+    border-radius: 4px;
 }
 
 .todo-items::-webkit-scrollbar-thumb:hover,
-.idea-items::-webkit-scrollbar-thumb:hover {
-    background: #a4a8b2;
+.idea-items::-webkit-scrollbar-thumb:hover,
+.blocks-container::-webkit-scrollbar-thumb:hover {
+    background: #8b949e;
 }
 
-/* 响应式设计 */
-@media (max-width: 1200px) {
+/* 响应式设计 - 简化桌面应用版本 */
+@media (max-width: 1024px) {
     .workspace {
-        grid-template-columns: 250px 1fr 280px;
-        gap: 16px;
-        padding: 16px;
+        grid-template-columns: 240px 1fr 260px;
+        gap: 0;
     }
 }
 
 @media (max-width: 768px) {
     .workspace {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr;
-        height: auto;
-        min-height: 100vh;
+        grid-template-rows: 200px 200px 1fr;
+        height: 100vh;
     }
     
     .todo-list,
     .idea-pool {
-        max-height: 300px;
+        border-right: none;
+        border-bottom: 1px solid #e1e4e8;
     }
     
     .main-editor {
-        min-height: 400px;
-    }
-    
-    .workspace {
-        padding: 12px;
-        gap: 12px;
-    }
-    
-    .todo-list,
-    .idea-pool,
-    .main-editor {
-        padding: 16px;
-    }
-    
-    .section-header h3,
-    .editor-header h3 {
-        font-size: 16px;
-    }
-    
-    .todo-item,
-    .idea-item {
-        padding: 10px;
+        border: none;
     }
 }
 
-/* 动画效果 */
-.todo-item,
-.idea-item {
-    animation: fadeInUp 0.3s ease-out;
+/* 移除动画效果，桌面应用更注重性能 */
+
+/* Element Plus 组件样式优化 - 桌面应用风格 */
+:deep(.el-button) {
+    border-radius: 4px;
+    font-size: 12px;
+    height: 28px;
+    padding: 4px 8px;
 }
 
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+:deep(.el-button--small) {
+    height: 24px;
+    padding: 2px 6px;
+    font-size: 11px;
 }
 
-/* 对话框样式优化 */
-:deep(.el-dialog) {
-    border-radius: 12px;
+:deep(.el-input__wrapper) {
+    border-radius: 4px;
+    font-size: 13px;
 }
 
-:deep(.el-dialog__header) {
-    padding: 20px 20px 0;
+:deep(.el-tag) {
+    border-radius: 3px;
+    font-size: 11px;
+    height: 20px;
+    line-height: 18px;
 }
 
-:deep(.el-dialog__body) {
-    padding: 20px;
+:deep(.el-checkbox) {
+    font-size: 13px;
 }
 
-:deep(.el-dialog__footer) {
-    padding: 0 20px 20px;
-}
+/* 对话框样式优化 - 移除，桌面应用通常不需要复杂对话框 */
 </style>
