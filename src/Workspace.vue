@@ -1,7 +1,7 @@
 <template>
-    <div class="workspace">
+    <div class="workspace" :style="workspaceStyle">
         <!-- 待办清单区域 -->
-        <div class="todo-list">
+        <div class="todo-list" :style="{ width: leftWidth + 'px' }">
             <div class="section-header">
                 <h3>待办清单</h3>
             </div>
@@ -39,8 +39,14 @@
             </div>
         </div>
 
+        <!-- 左侧分隔线 -->
+        <div 
+            class="resizer left-resizer" 
+            @mousedown="startResize('left', $event)"
+        ></div>
+
         <!-- 主编辑器区域 -->
-        <div class="main-editor">
+        <div class="main-editor" :style="{ width: centerWidth + 'px' }">
             <div class="editor-header">
                 <h3>工作区</h3>
                 <div class="editor-actions">
@@ -100,8 +106,14 @@
             </div>
         </div>
 
+        <!-- 右侧分隔线 -->
+        <div 
+            class="resizer right-resizer" 
+            @mousedown="startResize('right', $event)"
+        ></div>
+
         <!-- 灵感池区域 -->
-        <div class="idea-pool">
+        <div class="idea-pool" :style="{ width: rightWidth + 'px' }">
             <div class="section-header">
                 <h3>灵感池</h3>
             </div>
@@ -158,6 +170,75 @@ const editingBlockId = ref(null)
 
 // 存储区域引用
 const blockRefs = new Map()
+
+// 宽度调整相关状态
+const leftWidth = ref(260)
+const rightWidth = ref(280)
+const isResizing = ref(false)
+const resizingType = ref('')
+const startX = ref(0)
+const startLeftWidth = ref(0)
+const startRightWidth = ref(0)
+
+// 计算中间区域宽度
+const centerWidth = computed(() => {
+    const totalWidth = window.innerWidth || 1200
+    return totalWidth - leftWidth.value - rightWidth.value - 2 // 2px for two 1px resizers
+})
+
+// 计算workspace样式
+const workspaceStyle = computed(() => ({
+    gridTemplateColumns: `${leftWidth.value}px 1px ${centerWidth.value}px 1px ${rightWidth.value}px`
+}))
+
+// 开始调整大小
+const startResize = (type, event) => {
+    isResizing.value = true
+    resizingType.value = type
+    startX.value = event.clientX
+    startLeftWidth.value = leftWidth.value
+    startRightWidth.value = rightWidth.value
+    
+    document.addEventListener('mousemove', handleResize)
+    document.addEventListener('mouseup', stopResize)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    
+    event.preventDefault()
+}
+
+// 处理调整大小
+const handleResize = (event) => {
+    if (!isResizing.value) return
+    
+    const deltaX = event.clientX - startX.value
+    const minWidth = 200
+    const maxWidth = window.innerWidth - 400 // 保留最小400px给其他区域
+    
+    if (resizingType.value === 'left') {
+        const newWidth = Math.max(minWidth, Math.min(maxWidth, startLeftWidth.value + deltaX))
+        leftWidth.value = newWidth
+    } else if (resizingType.value === 'right') {
+        const newWidth = Math.max(minWidth, Math.min(maxWidth, startRightWidth.value - deltaX))
+        rightWidth.value = newWidth
+    }
+}
+
+// 停止调整大小
+const stopResize = () => {
+    isResizing.value = false
+    resizingType.value = ''
+    document.removeEventListener('mousemove', handleResize)
+    document.removeEventListener('mouseup', stopResize)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    
+    // 保存宽度设置到localStorage
+    localStorage.setItem('workspace-widths', JSON.stringify({
+        leftWidth: leftWidth.value,
+        rightWidth: rightWidth.value
+    }))
+}
 
 // 设置区域引用
 const setBlockRef = (el, blockId) => {
@@ -472,6 +553,18 @@ const saveContent = () => {
 // 组件挂载时恢复内容
 import { onMounted, onUnmounted } from 'vue'
 onMounted(() => {
+    // 恢复宽度设置
+    const savedWidths = localStorage.getItem('workspace-widths')
+    if (savedWidths) {
+        try {
+            const widths = JSON.parse(savedWidths)
+            leftWidth.value = widths.leftWidth || 260
+            rightWidth.value = widths.rightWidth || 280
+        } catch (error) {
+            console.warn('恢复宽度设置失败:', error)
+        }
+    }
+    
     // 恢复工作区块数据
     const savedBlocks = localStorage.getItem('workspace-blocks')
     if (savedBlocks) {
@@ -485,35 +578,112 @@ onMounted(() => {
     
     // 添加全局键盘监听
     document.addEventListener('keydown', handleGlobalKeydown)
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', handleWindowResize)
 })
 
 onUnmounted(() => {
     // 移除全局键盘监听
     document.removeEventListener('keydown', handleGlobalKeydown)
+    window.removeEventListener('resize', handleWindowResize)
+    
+    // 清理拖拽事件
+    if (isResizing.value) {
+        stopResize()
+    }
 })
+
+// 处理窗口大小变化
+const handleWindowResize = () => {
+    // 确保宽度在合理范围内
+    const totalWidth = window.innerWidth
+    const minTotalWidth = 600
+    
+    if (totalWidth < minTotalWidth) {
+        leftWidth.value = 200
+        rightWidth.value = 200
+    } else {
+        // 如果窗口变小，按比例调整
+        const currentTotal = leftWidth.value + rightWidth.value
+        const maxAllowed = totalWidth - 200 // 保留200px给中间区域
+        
+        if (currentTotal > maxAllowed) {
+            const ratio = maxAllowed / currentTotal
+            leftWidth.value = Math.max(200, leftWidth.value * ratio)
+            rightWidth.value = Math.max(200, rightWidth.value * ratio)
+        }
+    }
+}
 </script>
 
 <style scoped>
 .workspace {
     display: grid;
-    grid-template-columns: 260px 1fr 280px;
+    grid-template-columns: 260px 1px 1fr 1px 280px;
     height: 100vh;
+    width: 100vw;
     gap: 0;
     padding: 0;
+    margin: 0;
     background: #f8f9fa;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    overflow: hidden;
+}
+
+/* 分隔线样式 */
+.resizer {
+    width: 1px;
+    background: #d1d9e0;
+    cursor: col-resize;
+    position: relative;
+    transition: background-color 0.15s ease;
+    z-index: 10;
+}
+
+.resizer:hover {
+    background: #8b949e;
+    width: 3px;
+    margin-left: -1px;
+    margin-right: -1px;
+}
+
+.resizer:active {
+    background: #0969da;
+    width: 3px;
+    margin-left: -1px;
+    margin-right: -1px;
+}
+
+/* 分隔线激活状态的视觉提示 */
+.resizer::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 1px;
+    height: 30px;
+    background: #ffffff;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.resizer:hover::before {
+    opacity: 0.8;
 }
 
 /* 通用区域样式 */
 .todo-list,
 .idea-pool {
     background: #ffffff;
-    border-right: 1px solid #e1e4e8;
+    border-right: none;
     padding: 16px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 .main-editor {
@@ -522,6 +692,7 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 /* 区域头部样式 */
@@ -925,8 +1096,7 @@ onUnmounted(() => {
 /* 响应式设计 - 简化桌面应用版本 */
 @media (max-width: 1024px) {
     .workspace {
-        grid-template-columns: 240px 1fr 260px;
-        gap: 0;
+        grid-template-columns: 240px 1px 1fr 1px 260px;
     }
 }
 
@@ -937,14 +1107,20 @@ onUnmounted(() => {
         height: 100vh;
     }
     
+    .resizer {
+        display: none;
+    }
+    
     .todo-list,
     .idea-pool {
         border-right: none;
         border-bottom: 1px solid #e1e4e8;
+        width: 100% !important;
     }
     
     .main-editor {
         border: none;
+        width: 100% !important;
     }
 }
 
