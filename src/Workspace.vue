@@ -1105,8 +1105,6 @@ const handleWindowResize = () => {
 
 .command-input {
     margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #d1d9e0;
 }
 
 /* 不同类型区域的颜色主题 - 使用GitHub风格的颜色 */
