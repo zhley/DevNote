@@ -673,13 +673,12 @@ const handleWindowResize = () => {
 
 .toolbar-item {
     width: 48px;
-    height: 40px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     border-radius: 0;
-    margin-bottom: 4px;
     color: #666666;
     transition: all 0.15s ease;
     position: relative;
