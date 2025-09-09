@@ -1249,7 +1249,7 @@ const handleWindowResize = () => {
 .block-content {
     min-height: 20px;
     padding: 8px 12px;
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.2;
     color: #333333;
     outline: none;
