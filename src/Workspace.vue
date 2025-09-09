@@ -1251,6 +1251,270 @@ const handleWindowResize = () => {
     letter-spacing: 0.5px;
 }
 
+/* Block内容区域样式 - GitHub风格紧凑版 */
+.block-content {
+    min-height: 20px;
+    padding: 8px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #24292f;
+    outline: none;
+    cursor: text;
+    transition: all 0.15s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+}
+
+.block-content.editing {
+    background: #f6f8fa;
+    border: 1px solid #0969da;
+    border-radius: 3px;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
+.block-content.preview {
+    cursor: pointer;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
+.block-content.preview:hover {
+    background: #f6f8fa;
+}
+
+/* GitHub风格Markdown渲染 - 紧凑版 */
+.block-content :deep(h1),
+.block-content :deep(h2),
+.block-content :deep(h3),
+.block-content :deep(h4),
+.block-content :deep(h5),
+.block-content :deep(h6) {
+    margin-top: 8px;
+    margin-bottom: 4px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #24292f;
+}
+
+.block-content :deep(h1:first-child),
+.block-content :deep(h2:first-child),
+.block-content :deep(h3:first-child),
+.block-content :deep(h4:first-child),
+.block-content :deep(h5:first-child),
+.block-content :deep(h6:first-child) {
+    margin-top: 0;
+}
+
+.block-content :deep(h1) { 
+    font-size: 1.75em; 
+    border-bottom: 1px solid #d0d7de;
+    padding-bottom: 4px;
+}
+
+.block-content :deep(h2) { 
+    font-size: 1.5em; 
+    border-bottom: 1px solid #d0d7de;
+    padding-bottom: 4px;
+}
+
+.block-content :deep(h3) { font-size: 1.25em; }
+.block-content :deep(h4) { font-size: 1em; }
+.block-content :deep(h5) { font-size: 0.875em; }
+.block-content :deep(h6) { 
+    font-size: 0.85em; 
+    color: #656d76;
+}
+
+.block-content :deep(p) {
+    margin-top: 0;
+    margin-bottom: 8px;
+    line-height: 1.45;
+}
+
+.block-content :deep(p:last-child) {
+    margin-bottom: 0;
+}
+
+.block-content :deep(ul),
+.block-content :deep(ol) {
+    margin-top: 0;
+    margin-bottom: 8px;
+    padding-left: 1.5em;
+}
+
+.block-content :deep(ul:last-child),
+.block-content :deep(ol:last-child) {
+    margin-bottom: 0;
+}
+
+.block-content :deep(li) {
+    margin: 2px 0;
+    line-height: 1.45;
+}
+
+.block-content :deep(li > p) {
+    margin-bottom: 4px;
+}
+
+.block-content :deep(li + li) {
+    margin-top: 2px;
+}
+
+.block-content :deep(blockquote) {
+    margin: 8px 0;
+    padding: 0 12px;
+    border-left: 4px solid #d0d7de;
+    color: #656d76;
+    background: transparent;
+}
+
+.block-content :deep(blockquote:last-child) {
+    margin-bottom: 0;
+}
+
+.block-content :deep(blockquote > p:first-child) {
+    margin-top: 0;
+}
+
+.block-content :deep(blockquote > p:last-child) {
+    margin-bottom: 0;
+}
+
+.block-content :deep(code) {
+    background: #f6f8fa;
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 0.85em;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    color: #24292f;
+}
+
+.block-content :deep(pre) {
+    background: #f6f8fa;
+    border-radius: 6px;
+    padding: 8px;
+    margin: 8px 0;
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.45;
+    border: 1px solid #d0d7de;
+}
+
+.block-content :deep(pre:last-child) {
+    margin-bottom: 0;
+}
+
+.block-content :deep(pre code) {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    color: #24292f;
+}
+
+.block-content :deep(a) {
+    color: #0969da;
+    text-decoration: none;
+}
+
+.block-content :deep(a:hover) {
+    text-decoration: underline;
+}
+
+.block-content :deep(strong) {
+    font-weight: 600;
+}
+
+.block-content :deep(em) {
+    font-style: italic;
+}
+
+.block-content :deep(del) {
+    text-decoration: line-through;
+}
+
+.block-content :deep(hr) {
+    border: none;
+    border-top: 1px solid #d0d7de;
+    margin: 16px 0;
+    height: 0;
+}
+
+.block-content :deep(table) {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    margin: 8px 0;
+    display: block;
+    overflow: auto;
+    font-size: 0.85em;
+}
+
+.block-content :deep(table:last-child) {
+    margin-bottom: 0;
+}
+
+.block-content :deep(thead) {
+    display: table-header-group;
+}
+
+.block-content :deep(tbody) {
+    display: table-row-group;
+}
+
+.block-content :deep(tr) {
+    background: #ffffff;
+    border-top: 1px solid #d0d7de;
+}
+
+.block-content :deep(tr:nth-child(2n)) {
+    background: #f6f8fa;
+}
+
+.block-content :deep(th),
+.block-content :deep(td) {
+    border: 1px solid #d0d7de;
+    padding: 4px 8px;
+    text-align: left;
+}
+
+.block-content :deep(th) {
+    background: #f6f8fa;
+    font-weight: 600;
+}
+
+.block-content :deep(img) {
+    max-width: 100%;
+    height: auto;
+    margin: 4px 0;
+}
+
+.block-content :deep(kbd) {
+    background: #f6f8fa;
+    border: 1px solid #d0d7de;
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 0.75em;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    color: #24292f;
+    box-shadow: inset 0 -1px 0 #d0d7de;
+}
+
+.block-content :deep(mark) {
+    background: #fff8c5;
+    color: #24292f;
+    padding: 1px 2px;
+    border-radius: 2px;
+}
+
 .command-input {
     margin-top: 12px;
 }
