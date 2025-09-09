@@ -1250,7 +1250,7 @@ const handleWindowResize = () => {
     min-height: 20px;
     padding: 8px 12px;
     font-size: 16px;
-    line-height: 0.7;
+    line-height: 1.2;
     color: #333333;
     outline: none;
     cursor: text;
@@ -1644,8 +1644,6 @@ const handleWindowResize = () => {
         width: 100% !important;
     }
 }
-
-/* 移除动画效果，桌面应用更注重性能 */
 
 /* Element Plus 组件样式优化 - 桌面应用风格 */
 :deep(.el-button) {
