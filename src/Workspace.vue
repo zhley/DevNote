@@ -1537,5 +1537,4 @@ const handleWindowResize = () => {
     font-size: 13px;
 }
 
-/* 对话框样式优化 - 移除，桌面应用通常不需要复杂对话框 */
 </style>
