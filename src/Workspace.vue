@@ -209,8 +209,7 @@ import MarkdownIt from 'markdown-it'
 const md = new MarkdownIt({
     html: true,
     linkify: true,
-    typographer: true,
-    breaks: true  // 启用换行符转换
+    typographer: true
 })
 
 const input = ref('')
@@ -311,14 +310,7 @@ const setBlockRef = (el, blockId) => {
 
 // 渲染Markdown内容
 const renderMarkdown = (content) => {
-    if (!content || content.trim() === '') return ''
-    
-    // 处理换行：单独换行转为硬换行，连续两个换行保持为段落分割
-    const processedContent = content
-        .replace(/\n\n+/g, '\n\n')  // 多个连续换行合并为双换行
-        .replace(/(?<!\n)\n(?!\n)/g, '  \n')  // 单换行转为硬换行（两个空格+换行）
-    
-    return md.render(processedContent)
+    return md.render(content)
 }
 
 // 判断区域是否正在编辑
@@ -1259,7 +1251,7 @@ const handleWindowResize = () => {
     padding: 8px 12px;
     font-size: 16px;
     line-height: 0.7;
-    color: #24292f;
+    color: #333333;
     outline: none;
     cursor: text;
     transition: all 0.15s ease;
@@ -1399,8 +1391,8 @@ const handleWindowResize = () => {
 .block-content :deep(code) {
     background: #f6f8fa;
     border-radius: 3px;
-    padding: 1px 4px;
-    font-size: 0.85em;
+    padding: 1px 1px;
+    font-size: 1em;
     font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
     color: #24292f;
 }
