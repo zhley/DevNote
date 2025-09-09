@@ -51,8 +51,8 @@
                         class="todo-item"
                         :class="{ 'finished': todo.finished }"
                     >
-                        <div class="todo-content" @click="toggleTodoExpansion(index)">
-                            <div class="todo-header">
+                        <div class="todo-content">
+                            <div class="todo-header" @click="toggleTodoExpansion(index)">
                                 <span class="todo-title">{{ todo.title }}</span>
                             </div>
                             <div 
@@ -993,17 +993,21 @@ const handleWindowResize = () => {
 .todo-content {
     flex: 1;
     min-width: 0;
-    cursor: pointer;
-    padding: 2px 4px;
-    margin: -2px -4px;
 }
 
 .todo-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 2px 0;
+    padding: 4px 6px;
     border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    margin: -2px -4px 4px -4px;
+}
+
+.todo-header:hover {
+    background-color: rgba(246, 248, 250, 0.8);
 }
 
 .todo-title {
