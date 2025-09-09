@@ -867,7 +867,7 @@ const handleWindowResize = () => {
 .todo-list,
 .idea-pool {
     background: #ffffff;
-    padding: 16px;
+    padding: 16px 16px 16px 16px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -877,7 +877,7 @@ const handleWindowResize = () => {
 
 .main-editor {
     background: #ffffff;
-    padding: 16px;
+    padding: 16px 16px 16px 16px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -959,6 +959,8 @@ const handleWindowResize = () => {
 .todo-items {
     flex: 1;
     overflow-y: auto;
+    margin-right: -16px;
+    padding-right: 16px;
 }
 
 .todo-item {
@@ -1132,6 +1134,8 @@ const handleWindowResize = () => {
 .idea-items {
     flex: 1;
     overflow-y: auto;
+    margin-right: -16px;
+    padding-right: 16px;
 }
 
 .idea-item {
@@ -1191,6 +1195,8 @@ const handleWindowResize = () => {
     flex: 1;
     overflow-y: auto;
     padding: 4px 0;
+    margin-right: -16px;
+    padding-right: 16px;
 }
 
 .block-item {
@@ -1422,9 +1428,12 @@ const handleWindowResize = () => {
 
 /* 滚动条样式 - 桌面应用风格 */
 .todo-items::-webkit-scrollbar,
-.idea-items::-webkit-scrollbar,
+.idea-items::-webkit-scrollbar {
+    width: 4px;
+}
+
 .blocks-container::-webkit-scrollbar {
-    width: 8px;
+    width: 4px;
 }
 
 .todo-items::-webkit-scrollbar-track,
@@ -1437,7 +1446,7 @@ const handleWindowResize = () => {
 .idea-items::-webkit-scrollbar-thumb,
 .blocks-container::-webkit-scrollbar-thumb {
     background: #d1d9e0;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .todo-items::-webkit-scrollbar-thumb:hover,
