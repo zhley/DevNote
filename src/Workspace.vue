@@ -313,8 +313,10 @@ const setBlockRef = (el, blockId) => {
 const renderMarkdown = (content) => {
     if (!content || content.trim() === '') return ''
     
-    // 将所有换行符转换为两个空格+换行，这是Markdown的硬换行语法
-    const processedContent = content.replace(/\n/g, '  \n')
+    // 处理换行：单独换行转为硬换行，连续两个换行保持为段落分割
+    const processedContent = content
+        .replace(/\n\n+/g, '\n\n')  // 多个连续换行合并为双换行
+        .replace(/(?<!\n)\n(?!\n)/g, '  \n')  // 单换行转为硬换行（两个空格+换行）
     
     return md.render(processedContent)
 }
@@ -1255,8 +1257,8 @@ const handleWindowResize = () => {
 .block-content {
     min-height: 20px;
     padding: 8px 12px;
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 16px;
+    line-height: 0.7;
     color: #24292f;
     outline: none;
     cursor: text;
@@ -1265,10 +1267,10 @@ const handleWindowResize = () => {
 }
 
 .block-content.editing {
+    line-height: 1.5;
     background: #f6f8fa;
     border: 1px solid #0969da;
     border-radius: 3px;
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
     white-space: pre-wrap;
     word-wrap: break-word;
     user-select: text;
@@ -1336,12 +1338,17 @@ const handleWindowResize = () => {
 
 .block-content :deep(p) {
     margin-top: 0;
-    margin-bottom: 8px;
-    line-height: 1.45;
+    margin-bottom: 1px;
+    line-height: 1.5;
 }
 
 .block-content :deep(p:last-child) {
     margin-bottom: 0;
+}
+
+/* 硬换行样式优化 */
+.block-content :deep(br) {
+    line-height: 1.1;
 }
 
 .block-content :deep(ul),
