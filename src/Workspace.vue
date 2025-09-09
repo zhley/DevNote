@@ -99,17 +99,45 @@
                     >
                         <div class="idea-header">
                             <h4>{{ idea.title }}</h4>
-                            <el-button 
-                                type="danger" 
-                                size="small" 
-                                text
-                                @click.stop="deleteIdea(index)"
-                            >
-                                <el-icon><Delete /></el-icon>
-                            </el-button>
+                            <div class="idea-actions">
+                                <el-button 
+                                    v-if="idea.status === 'pending'"
+                                    size="small" 
+                                    text
+                                    @click.stop="addToTodo(index)"
+                                    title="加入待办"
+                                >
+                                    <el-icon>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                        </svg>
+                                    </el-icon>
+                                </el-button>
+                                <el-button 
+                                    type="danger" 
+                                    size="small" 
+                                    text
+                                    @click.stop="discardIdea(index)"
+                                    title="废弃"
+                                >
+                                    <el-icon><Delete /></el-icon>
+                                </el-button>
+                            </div>
                         </div>
-                        <p class="idea-content">{{ idea.content }}</p>
+                        <p 
+                            class="idea-content"
+                            :class="{ 'expanded': expandedIdeas.has(index) }"
+                            @click="toggleIdeaExpansion(index)"
+                        >
+                            {{ idea.content }}
+                        </p>
                         <div class="idea-footer">
+                            <el-tag 
+                                :type="getStatusType(idea.status)" 
+                                size="small"
+                            >
+                                {{ getStatusText(idea.status) }}
+                            </el-tag>
                             <span class="idea-date">{{ formatDate(idea.createdAt) }}</span>
                         </div>
                     </div>
@@ -360,19 +388,25 @@ const ideas = reactive([
     {
         title: "移动端适配方案",
         content: "考虑使用 CSS Grid 和 Flexbox 结合的方式来实现响应式布局，可以更好地适配不同屏幕尺寸。",
-        createdAt: new Date('2024-01-15')
+        createdAt: new Date('2024-01-15'),
+        status: 'pending' // pending, in-progress, implemented, discarded
     },
     {
         title: "用户体验优化",
         content: "添加骨架屏加载效果，减少用户等待时的焦虑感，同时考虑添加懒加载来提升页面性能。",
-        createdAt: new Date('2024-01-14')
+        createdAt: new Date('2024-01-14'),
+        status: 'in-progress'
     },
     {
         title: "数据可视化",
         content: "使用 ECharts 或 D3.js 来创建交互式图表，让数据展示更加直观和美观。",
-        createdAt: new Date('2024-01-13')
+        createdAt: new Date('2024-01-13'),
+        status: 'implemented'
     }
 ])
+
+// 灵感展开状态管理
+const expandedIdeas = reactive(new Set())
 
 // 切换待办事项完成状态
 const toggleTodo = (index) => {
@@ -440,10 +474,47 @@ const getPriorityText = (priority) => {
     return textMap[priority] || '中'
 }
 
-// 删除灵感
-const deleteIdea = (index) => {
-    ideas.splice(index, 1)
-    ElMessage.success('灵感已删除')
+// 废弃灵感
+const discardIdea = (index) => {
+    ideas[index].status = 'discarded'
+    ElMessage.success('灵感已废弃')
+}
+
+// 切换灵感内容展开状态
+const toggleIdeaExpansion = (index) => {
+    if (expandedIdeas.has(index)) {
+        expandedIdeas.delete(index)
+    } else {
+        expandedIdeas.add(index)
+    }
+}
+
+// 加入待办
+const addToTodo = (index) => {
+    ideas[index].status = 'in-progress'
+    ElMessage.success('已加入待办')
+}
+
+// 获取状态文本
+const getStatusText = (status) => {
+    const statusMap = {
+        'pending': '待验证',
+        'in-progress': '待办中', 
+        'implemented': '已实施',
+        'discarded': '已废弃'
+    }
+    return statusMap[status] || '待验证'
+}
+
+// 获取状态类型
+const getStatusType = (status) => {
+    const typeMap = {
+        'pending': 'info',
+        'in-progress': 'warning',
+        'implemented': 'success', 
+        'discarded': 'info'
+    }
+    return typeMap[status] || 'info'
 }
 
 // 获取区域类型标签
@@ -1169,6 +1240,11 @@ const handleWindowResize = () => {
     color: #24292f;
 }
 
+.idea-actions {
+    display: flex;
+    gap: 4px;
+}
+
 .idea-content {
     font-size: 12px;
     color: #656d76;
@@ -1179,11 +1255,25 @@ const handleWindowResize = () => {
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.idea-content.expanded {
+    display: block;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+    overflow: visible;
+}
+
+.idea-content:hover {
+    background-color: rgba(246, 248, 250, 0.5);
 }
 
 .idea-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .idea-date {
