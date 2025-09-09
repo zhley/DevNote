@@ -761,6 +761,10 @@ const handleWindowResize = () => {
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 /* 浅色调的侧边工具栏 */
@@ -1050,6 +1054,10 @@ const handleWindowResize = () => {
     font-size: 12px;
     line-height: 1.5;
     color: #656d76;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .todo-checkbox {
@@ -1260,12 +1268,20 @@ const handleWindowResize = () => {
     font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
     white-space: pre-wrap;
     word-wrap: break-word;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .block-content.preview {
     cursor: pointer;
     white-space: pre-wrap;
     word-wrap: break-word;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .block-content.preview:hover {
@@ -1383,6 +1399,13 @@ const handleWindowResize = () => {
 
 .command-input {
     margin-top: 12px;
+}
+
+.command-input :deep(.el-input__inner) {
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 /* 不同类型区域的颜色主题 - 使用GitHub风格的颜色 */
