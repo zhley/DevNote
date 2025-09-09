@@ -1275,10 +1275,10 @@ const handleWindowResize = () => {
     cursor: pointer;
     white-space: pre-wrap;
     word-wrap: break-word;
-    user-select: text;
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .block-content.preview:hover {
