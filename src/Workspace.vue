@@ -975,6 +975,7 @@ const handleWindowResize = () => {
 }
 
 .todo-item:hover {
+    background-color: #f6f8fa;
     border-color: #d0d7de;
 }
 
@@ -993,14 +994,8 @@ const handleWindowResize = () => {
     flex: 1;
     min-width: 0;
     cursor: pointer;
-    transition: background-color 0.15s ease;
-    border-radius: 3px;
     padding: 2px 4px;
     margin: -2px -4px;
-}
-
-.todo-content:hover {
-    background-color: #f6f8fa;
 }
 
 .todo-header {
@@ -1045,13 +1040,10 @@ const handleWindowResize = () => {
 
 .todo-details {
     margin: 8px 0;
-    padding: 10px;
-    background-color: #f6f8fa;
-    border-radius: 4px;
-    border-left: 3px solid #0969da;
+    padding: 8px 0;
     font-size: 12px;
     line-height: 1.5;
-    color: #24292f;
+    color: #656d76;
 }
 
 .todo-checkbox {
@@ -1079,6 +1071,7 @@ const handleWindowResize = () => {
     margin: 0.5em 0 0.3em 0;
     font-weight: 600;
     line-height: 1.2;
+    color: #656d76;
 }
 
 .todo-details :deep(h1) { font-size: 1.1em; }
@@ -1091,40 +1084,44 @@ const handleWindowResize = () => {
 .todo-details :deep(p) {
     margin: 0.3em 0;
     line-height: 1.4;
+    color: #656d76;
 }
 
 .todo-details :deep(ul),
 .todo-details :deep(ol) {
     margin: 0.3em 0;
     padding-left: 1.2em;
+    color: #656d76;
 }
 
 .todo-details :deep(li) {
     margin: 0.1em 0;
     line-height: 1.3;
+    color: #656d76;
 }
 
 .todo-details :deep(code) {
-    background: #e6f3ff;
+    background: #f3f4f6;
     padding: 0.1em 0.2em;
     border-radius: 2px;
     font-size: 0.9em;
+    color: #586069;
 }
 
 .todo-details :deep(pre) {
-    background: #f1f3f4;
+    background: #f6f8fa;
     padding: 0.4em;
     border-radius: 3px;
     overflow-x: auto;
     margin: 0.3em 0;
+    color: #586069;
 }
 
 .todo-details :deep(blockquote) {
     margin: 0.3em 0;
     padding: 0.2em 0.4em;
-    border-left: 3px solid #d1d9e0;
-    background: #f8f9fa;
-    color: #656d76;
+    border-left: 2px solid #d1d9e0;
+    color: #8b949e;
 }
 
 /* 灵感池样式 */
