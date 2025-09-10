@@ -22,6 +22,16 @@
                     <path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/>
                 </svg>
             </div>
+            <div 
+                class="toolbar-item"
+                :class="{ active: activeTab === 'bug' }"
+                @click="setActiveTab('bug')"
+                title="Bug列表"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 12h-4v-2h4m6 7h-2v-2h2m0-4h-2V9.5h2m-2-1V8c0-.6-.4-1-1-1h-1V5c0-.6-.4-1-1-1H9c-.6 0-1 .4-1 1v2H7c-.6 0-1 .4-1 1v.5H4v2h2V13H4v2h2v2c0 .6.4 1 1 1h1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1v-2h1c.6 0 1-.4 1-1v-2z"/>
+                </svg>
+            </div>
         </div>
 
         <!-- 左侧内容区域 -->
@@ -139,6 +149,40 @@
                                 {{ getStatusText(idea.status) }}
                             </el-tag>
                             <span class="idea-date">{{ formatDate(idea.createdAt) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bug列表区域 -->
+            <div v-if="activeTab === 'bug'" class="bug-list">
+                <div class="section-header">
+                    <h3>Bug列表</h3>
+                </div>
+                <div class="bug-items">
+                    <div 
+                        v-for="(bug, index) in bugs" 
+                        :key="index"
+                        class="bug-item"
+                    >
+                        <div class="bug-header">
+                            <h4>{{ bug.title }}</h4>
+                        </div>
+                        <p 
+                            class="bug-content"
+                            :class="{ 'expanded': expandedBugs.has(index) }"
+                            @click="toggleBugExpansion(index)"
+                        >
+                            {{ bug.description }}
+                        </p>
+                        <div class="bug-footer">
+                            <el-tag 
+                                :type="getBugStatusType(bug.status)" 
+                                size="small"
+                            >
+                                {{ getBugStatusText(bug.status) }}
+                            </el-tag>
+                            <span class="bug-date">{{ formatDate(bug.createdAt) }}</span>
                         </div>
                     </div>
                 </div>
@@ -408,6 +452,31 @@ const ideas = reactive([
 // 灵感展开状态管理
 const expandedIdeas = reactive(new Set())
 
+// Bug数据
+const bugs = reactive([
+    {
+        title: "登录页面样式问题",
+        description: "在Chrome浏览器中，登录按钮在某些分辨率下会出现样式错位问题，导致按钮文字显示不完整。",
+        status: 'unfixed', // unfixed, fixing, fixed
+        createdAt: new Date('2024-01-10')
+    },
+    {
+        title: "数据保存失败",
+        description: "用户在编辑个人信息后点击保存，偶尔会出现保存失败的情况，错误信息为网络超时。",
+        status: 'fixing',
+        createdAt: new Date('2024-01-08')
+    },
+    {
+        title: "搜索功能异常",
+        description: "在搜索框输入特殊字符时，会导致页面崩溃或返回错误的搜索结果。",
+        status: 'fixed',
+        createdAt: new Date('2024-01-05')
+    }
+])
+
+// Bug展开状态管理
+const expandedBugs = reactive(new Set())
+
 // 切换待办事项完成状态
 const toggleTodo = (index) => {
     const todo = todos[index]
@@ -515,6 +584,35 @@ const getStatusType = (status) => {
         'discarded': 'info'
     }
     return typeMap[status] || 'info'
+}
+
+// 切换Bug内容展开状态
+const toggleBugExpansion = (index) => {
+    if (expandedBugs.has(index)) {
+        expandedBugs.delete(index)
+    } else {
+        expandedBugs.add(index)
+    }
+}
+
+// 获取Bug状态文本
+const getBugStatusText = (status) => {
+    const statusMap = {
+        'unfixed': '未修复',
+        'fixing': '修复中',
+        'fixed': '已修复'
+    }
+    return statusMap[status] || '未修复'
+}
+
+// 获取Bug状态类型
+const getBugStatusType = (status) => {
+    const typeMap = {
+        'unfixed': 'danger',
+        'fixing': 'warning',
+        'fixed': 'success'
+    }
+    return typeMap[status] || 'danger'
 }
 
 // 获取区域类型标签
@@ -1211,6 +1309,24 @@ const handleWindowResize = () => {
     padding-right: 16px;
 }
 
+/* Bug列表样式 */
+.bug-list {
+    background: #ffffff;
+    padding: 16px 16px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.bug-items {
+    flex: 1;
+    overflow-y: auto;
+    margin-right: -16px;
+    padding-right: 16px;
+}
+
 .idea-item {
     padding: 10px;
     margin-bottom: 6px;
@@ -1277,6 +1393,71 @@ const handleWindowResize = () => {
 }
 
 .idea-date {
+    font-size: 12px;
+    color: #c0c4cc;
+}
+
+.bug-item {
+    padding: 10px;
+    margin-bottom: 6px;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    font-size: 13px;
+    background: #ffffff;
+}
+
+.bug-item:hover {
+    background-color: #f6f8fa;
+    border-color: #d0d7de;
+}
+
+.bug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.bug-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #24292f;
+}
+
+.bug-content {
+    font-size: 12px;
+    color: #656d76;
+    line-height: 1.4;
+    margin: 4px 0 6px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bug-content.expanded {
+    display: block;
+    -webkit-line-clamp: none;
+    line-clamp: none;
+    overflow: visible;
+}
+
+.bug-content:hover {
+    background-color: rgba(246, 248, 250, 0.5);
+}
+
+.bug-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bug-date {
     font-size: 12px;
     color: #c0c4cc;
 }
