@@ -204,10 +204,7 @@
                         <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.89-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
                     </svg>
                 </div>
-                <div class="editor-actions">
-                    <el-button size="small" @click="clearAllBlocks">清空所有</el-button>
-                    <el-button type="primary" size="small" @click="saveContent">保存</el-button>
-                </div>
+
             </div>
             
             <!-- 可编辑区域列表 -->
@@ -785,13 +782,7 @@ const handleBlockKeydown = (event, index) => {
     }
 }
 
-// 清空所有区域
-const clearAllBlocks = () => {
-    blocks.splice(0, blocks.length)
-    // 同时清理localStorage
-    localStorage.removeItem('workspace-blocks')
-    ElMessage.success('所有区域已清空')
-}
+
 
 // 格式化日期
 const formatDate = (date) => {
@@ -819,23 +810,7 @@ const handleDateChange = (date) => {
     ElMessage.success(`日期已切换到 ${formatCurrentDate()}`)
 }
 
-// 清空编辑器
-const clearEditor = () => {
-    blocks.splice(0, blocks.length)
-    ElMessage.success('工作区已清空')
-}
 
-// 保存内容
-const saveContent = () => {
-    if (blocks.length === 0) {
-        ElMessage.warning('没有内容需要保存')
-        return
-    }
-    
-    // 保存所有区域数据
-    localStorage.setItem('workspace-blocks', JSON.stringify(blocks))
-    ElMessage.success('内容已保存')
-}
 
 // 组件挂载时恢复内容
 import { onMounted, onUnmounted } from 'vue'
@@ -1117,10 +1092,7 @@ const handleWindowResize = () => {
     letter-spacing: 0.5px;
 }
 
-.editor-actions {
-    display: flex;
-    gap: 6px;
-}
+
 
 /* 待办事项样式 */
 .todo-items {
