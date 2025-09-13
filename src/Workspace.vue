@@ -490,11 +490,6 @@ const toggleTodo = (index) => {
         todo.completedAt = new Date()
         ElMessage.success('任务已完成！')
     }
-    
-    // 如果待办事项关联了工作区块，同步更新块的内容
-    if (todo.blockId) {
-        syncTodoToBlock(todo)
-    }
 }
 
 // 切换待办事项详情展开状态
@@ -553,17 +548,7 @@ const getPriorityText = (priority) => {
 
 // 废弃灵感
 const discardIdea = (index) => {
-    const idea = ideas[index]
-    idea.status = 'discarded'
-    
-    // 如果关联了工作区块，删除对应的块
-    if (idea.blockId) {
-        const blockIndex = blocks.findIndex(block => block.id === idea.blockId)
-        if (blockIndex !== -1) {
-            blocks.splice(blockIndex, 1)
-        }
-    }
-    
+    ideas[index].status = 'discarded'
     ElMessage.success('灵感已废弃')
 }
 
@@ -779,42 +764,6 @@ const createBlock = async (type, title = '', priority = 2) => {
     ElMessage.success(message)
 }
 
-// 同步待办事项到工作区块
-const syncTodoToBlock = (todo) => {
-    if (!todo.blockId) return
-    
-    const blockIndex = blocks.findIndex(block => block.id === todo.blockId)
-    if (blockIndex !== -1) {
-        const block = blocks[blockIndex]
-        // 更新块内容
-        let content = `# ${todo.title}`
-        if (todo.content.trim()) {
-            content += `\n${todo.content}`
-        }
-        if (todo.finished) {
-            content += `\n\n**状态：已完成** ✅`
-        }
-        block.content = content
-    }
-}
-
-// 同步灵感到工作区块
-const syncIdeaToBlock = (idea) => {
-    if (!idea.blockId) return
-    
-    const blockIndex = blocks.findIndex(block => block.id === idea.blockId)
-    if (blockIndex !== -1) {
-        const block = blocks[blockIndex]
-        // 更新块内容
-        let content = `# ${idea.title}`
-        if (idea.content.trim()) {
-            content += `\n${idea.content}`
-        }
-        content += `\n\n**状态：${getStatusText(idea.status)}**`
-        block.content = content
-    }
-}
-
 // 处理区域获得焦点
 const handleBlockFocus = (blockId) => {
     editingBlockId.value = blockId
@@ -915,19 +864,6 @@ const handleBlockKeydown = (event, index) => {
             // 获取block信息用于提示
             const block = blocks[index]
             const blockType = getBlockTypeLabel(block.type)
-            
-            // 删除关联的待办事项或灵感
-            if (block.type === 'todo' && block.id) {
-                const todoIndex = todos.findIndex(todo => todo.blockId === block.id)
-                if (todoIndex !== -1) {
-                    todos.splice(todoIndex, 1)
-                }
-            } else if (block.type === 'idea' && block.id) {
-                const ideaIndex = ideas.findIndex(idea => idea.blockId === block.id)
-                if (ideaIndex !== -1) {
-                    ideas.splice(ideaIndex, 1)
-                }
-            }
             
             // 删除block
             blocks.splice(index, 1)
