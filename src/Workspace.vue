@@ -579,11 +579,27 @@ const expandedBugs = reactive(new Set())
 const toggleTodo = (index) => {
     const todo = todos[index]
     if (todo.finished) {
-        todo.completedAt = null
-        ElMessage.success('任务已标记为未完成')
-    } else {
         todo.completedAt = new Date()
         ElMessage.success('任务已完成！')
+        
+        // 如果有关联的灵感，将灵感状态改为已实施
+        if (todo.ideaId) {
+            const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+            if (ideaIndex !== -1) {
+                ideas[ideaIndex].status = 'implemented'
+            }
+        }
+    } else {
+        todo.completedAt = null
+        ElMessage.success('任务已标记为未完成')
+        
+        // 如果有关联的灵感，将灵感状态改为待办中
+        if (todo.ideaId) {
+            const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+            if (ideaIndex !== -1) {
+                ideas[ideaIndex].status = 'in-progress'
+            }
+        }
     }
 }
 
@@ -1035,6 +1051,16 @@ const handleBlockKeydown = (event, index) => {
             if (block.type === 'todo' && block.id) {
                 const todoIndex = todos.findIndex(todo => todo.blockId === block.id)
                 if (todoIndex !== -1) {
+                    const todo = todos[todoIndex]
+                    
+                    // 如果待办项关联了灵感，将灵感状态改为待验证
+                    if (todo.ideaId) {
+                        const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+                        if (ideaIndex !== -1) {
+                            ideas[ideaIndex].status = 'pending'
+                        }
+                    }
+                    
                     todos.splice(todoIndex, 1)
                 }
             } else if (block.type === 'idea' && block.id) {
