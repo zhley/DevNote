@@ -195,26 +195,22 @@
                         v-for="(bug, index) in bugs" 
                         :key="index"
                         class="bug-item"
+                        @click="showBugDetail(bug, index, $event)"
                     >
                         <div class="bug-header">
-                            <h4>{{ bug.title }}</h4>
-                        </div>
-                        <p 
-                            class="bug-content"
-                            :class="{ 'expanded': expandedBugs.has(index) }"
-                            @click="toggleBugExpansion(index)"
-                        >
-                            {{ bug.description }}
-                        </p>
-                        <div class="bug-footer">
-                            <el-tag 
-                                :type="getBugStatusType(bug.status)" 
-                                size="small"
-                            >
-                                {{ getBugStatusText(bug.status) }}
-                            </el-tag>
+                            <div class="bug-checkbox-container">
+                                <el-checkbox 
+                                    v-model="bug.fixed"
+                                    @click.stop
+                                    @change="toggleBugStatus(index)"
+                                    size="small"
+                                />
+                                <span class="bug-status-text">{{ bug.fixed ? '已修复' : '未修复' }}</span>
+                            </div>
                             <span class="bug-date">{{ formatDate(bug.createdAt) }}</span>
                         </div>
+                        <h4 class="bug-title">{{ bug.title }}</h4>
+                        <p class="bug-description">{{ bug.description }}</p>
                     </div>
                 </div>
             </div>
@@ -297,6 +293,46 @@
                 :clearable="false"
             />
         </el-dialog>
+
+        <!-- Bug详情悬浮卡片 -->
+        <div 
+            v-if="showBugDetailCard"
+            class="bug-detail-card"
+            :style="bugDetailCardStyle"
+            @click.stop
+        >
+            <div class="bug-detail-header">
+                <h4>{{ selectedBug?.title }}</h4>
+                <div class="bug-detail-status">
+                    <el-checkbox 
+                        v-model="selectedBug.fixed"
+                        @change="toggleBugStatus(selectedBugIndex)"
+                        size="small"
+                    />
+                    <span>{{ selectedBug?.fixed ? '已修复' : '未修复' }}</span>
+                </div>
+            </div>
+            <div class="bug-detail-content">
+                <div class="bug-detail-section">
+                    <h5>问题描述：</h5>
+                    <p>{{ selectedBug?.description }}</p>
+                </div>
+                <div class="bug-detail-section">
+                    <h5>追加信息：</h5>
+                    <p>{{ selectedBug?.additionalInfo }}</p>
+                </div>
+                <div class="bug-detail-date">
+                    创建时间：{{ formatDate(selectedBug?.createdAt) }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 遮罩层 -->
+        <div 
+            v-if="showBugDetailCard"
+            class="bug-detail-overlay"
+            @click="closeBugDetail"
+        ></div>
     </div>
 </template>
 <script setup>
@@ -555,25 +591,79 @@ const bugs = reactive([
     {
         title: "登录页面样式问题",
         description: "在Chrome浏览器中，登录按钮在某些分辨率下会出现样式错位问题，导致按钮文字显示不完整。",
-        status: 'unfixed', // unfixed, fixing, fixed
+        fixed: false, // true: 已修复, false: 未修复
+        additionalInfo: "初步排查是CSS样式问题，可能与flexbox兼容性有关。尝试修改了z-index和position属性，问题依然存在。计划使用媒体查询进行响应式适配。",
         createdAt: new Date('2024-01-10')
     },
     {
         title: "数据保存失败",
         description: "用户在编辑个人信息后点击保存，偶尔会出现保存失败的情况，错误信息为网络超时。",
-        status: 'fixing',
+        fixed: false,
+        additionalInfo: "问题原因：后端API响应时间过长，前端超时设置为5秒。已尝试增加超时时间到10秒，并添加重试机制。需要优化后端数据库查询性能。",
         createdAt: new Date('2024-01-08')
     },
     {
         title: "搜索功能异常",
         description: "在搜索框输入特殊字符时，会导致页面崩溃或返回错误的搜索结果。",
-        status: 'fixed',
+        fixed: true,
+        additionalInfo: "解决方案：对用户输入进行转义处理，使用正则表达式过滤特殊字符。已在前端和后端都添加了输入验证。测试通过，问题已解决。",
         createdAt: new Date('2024-01-05')
     }
 ])
 
-// Bug展开状态管理
-const expandedBugs = reactive(new Set())
+// Bug悬浮卡片状态管理
+const showBugDetailCard = ref(false)
+const selectedBug = ref(null)
+const selectedBugIndex = ref(-1)
+const bugDetailCardStyle = ref({})
+
+// Bug悬浮卡片显示
+const showBugDetail = (bug, index, event) => {
+    selectedBug.value = bug
+    selectedBugIndex.value = index
+    showBugDetailCard.value = true
+    
+    // 计算悬浮卡片位置
+    const rect = event.currentTarget.getBoundingClientRect()
+    const cardWidth = 400
+    const cardHeight = 300
+    
+    let left = rect.right + 10
+    let top = rect.top
+    
+    // 防止卡片超出屏幕右边界
+    if (left + cardWidth > window.innerWidth) {
+        left = rect.left - cardWidth - 10
+    }
+    
+    // 防止卡片超出屏幕下边界
+    if (top + cardHeight > window.innerHeight) {
+        top = window.innerHeight - cardHeight - 10
+    }
+    
+    // 防止卡片超出屏幕上边界
+    if (top < 10) {
+        top = 10
+    }
+    
+    bugDetailCardStyle.value = {
+        left: left + 'px',
+        top: top + 'px'
+    }
+}
+
+// 关闭Bug详情卡片
+const closeBugDetail = () => {
+    showBugDetailCard.value = false
+    selectedBug.value = null
+    selectedBugIndex.value = -1
+}
+
+// 切换Bug状态
+const toggleBugStatus = (index) => {
+    const bug = bugs[index]
+    ElMessage.success(bug.fixed ? 'Bug已标记为修复' : 'Bug已标记为未修复')
+}
 
 // 切换待办事项完成状态
 const toggleTodo = (index) => {
@@ -748,35 +838,6 @@ const getStatusType = (status) => {
         'discarded': 'info'
     }
     return typeMap[status] || 'info'
-}
-
-// 切换Bug内容展开状态
-const toggleBugExpansion = (index) => {
-    if (expandedBugs.has(index)) {
-        expandedBugs.delete(index)
-    } else {
-        expandedBugs.add(index)
-    }
-}
-
-// 获取Bug状态文本
-const getBugStatusText = (status) => {
-    const statusMap = {
-        'unfixed': '未修复',
-        'fixing': '修复中',
-        'fixed': '已修复'
-    }
-    return statusMap[status] || '未修复'
-}
-
-// 获取Bug状态类型
-const getBugStatusType = (status) => {
-    const typeMap = {
-        'unfixed': 'danger',
-        'fixing': 'warning',
-        'fixed': 'success'
-    }
-    return typeMap[status] || 'danger'
 }
 
 // 获取区域类型标签
@@ -1812,18 +1873,25 @@ const handleWindowResize = () => {
 }
 
 .bug-item {
-    padding: 10px;
-    margin-bottom: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
     border: 1px solid #e1e4e8;
-    border-radius: 4px;
+    border-radius: 6px;
     transition: all 0.15s ease;
     font-size: 13px;
     background: #ffffff;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
 }
 
 .bug-item:hover {
     background-color: #f6f8fa;
     border-color: #d0d7de;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .bug-header {
@@ -1831,49 +1899,133 @@ const handleWindowResize = () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+    flex-shrink: 0;
 }
 
-.bug-header h4 {
-    margin: 0;
+.bug-checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bug-status-text {
+    font-size: 12px;
+    color: #656d76;
+    font-weight: 500;
+}
+
+.bug-title {
+    margin: 0 0 8px 0;
     font-size: 14px;
+    font-weight: 600;
+    color: #24292f;
+    flex-shrink: 0;
+    line-height: 1.2;
+}
+
+.bug-description {
+    font-size: 12px;
+    color: #656d76;
+    line-height: 1.4;
+    margin: 0;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bug-date {
+    font-size: 11px;
+    color: #c0c4cc;
+}
+
+/* Bug详情悬浮卡片样式 */
+.bug-detail-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.bug-detail-card {
+    position: fixed;
+    width: 400px;
+    max-height: 500px;
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    overflow: hidden;
+}
+
+.bug-detail-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #e1e4e8;
+    background: #f6f8fa;
+}
+
+.bug-detail-header h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #24292f;
+    line-height: 1.3;
+}
+
+.bug-detail-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bug-detail-status span {
+    font-size: 13px;
+    color: #656d76;
+    font-weight: 500;
+}
+
+.bug-detail-content {
+    padding: 16px 20px 20px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.bug-detail-section {
+    margin-bottom: 16px;
+}
+
+.bug-detail-section:last-of-type {
+    margin-bottom: 12px;
+}
+
+.bug-detail-section h5 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
     font-weight: 600;
     color: #24292f;
 }
 
-.bug-content {
-    font-size: 12px;
+.bug-detail-section p {
+    margin: 0;
+    font-size: 13px;
     color: #656d76;
-    line-height: 1.4;
-    margin: 4px 0 6px 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.15s ease;
+    line-height: 1.5;
+    word-wrap: break-word;
 }
 
-.bug-content.expanded {
-    display: block;
-    -webkit-line-clamp: none;
-    line-clamp: none;
-    overflow: visible;
-}
-
-.bug-content:hover {
-    background-color: rgba(246, 248, 250, 0.5);
-}
-
-.bug-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.bug-date {
+.bug-detail-date {
     font-size: 12px;
-    color: #c0c4cc;
+    color: #8b949e;
+    text-align: right;
+    border-top: 1px solid #e1e4e8;
+    padding-top: 12px;
 }
 
 /* 主编辑器样式 */
