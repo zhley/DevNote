@@ -82,8 +82,11 @@
                                 <div 
                                     v-if="todo.ideaId" 
                                     class="idea-link"
-                                    @mouseenter="showIdeaTooltip = todo.ideaId"
-                                    @mouseleave="showIdeaTooltip = null"
+                                    @click="toggleIdeaTooltip(todo.ideaId)"
+                                    @mouseenter="handleIdeaMouseEnter(todo.ideaId)"
+                                    @mouseleave="handleIdeaMouseLeave(todo.ideaId)"
+                                    tabindex="0"
+                                    @blur="hideIdeaTooltip(todo.ideaId)"
                                 >
                                     <el-icon class="idea-icon">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -94,8 +97,9 @@
                                     
                                     <!-- 悬浮卡片 -->
                                     <div 
-                                        v-if="showIdeaTooltip === todo.ideaId" 
+                                        v-if="activeIdeaTooltip === todo.ideaId" 
                                         class="idea-tooltip"
+                                        @click.stop
                                     >
                                         <div class="tooltip-header">
                                             <h5>{{ todo.ideaId }}</h5>
@@ -349,8 +353,6 @@ const workspaceStyle = computed(() => ({
 // 设置活动标签
 const setActiveTab = (tab) => {
     activeTab.value = tab
-    // 保存当前活动标签到localStorage
-    localStorage.setItem('workspace-active-tab', tab)
 }
 
 // 开始调整大小
@@ -390,11 +392,6 @@ const stopResize = () => {
     document.removeEventListener('mouseup', stopResize)
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
-    
-    // 保存宽度设置到localStorage
-    localStorage.setItem('workspace-widths', JSON.stringify({
-        leftWidth: leftWidth.value
-    }))
 }
 
 // 设置区域引用
@@ -456,6 +453,74 @@ const allTodosExpanded = ref(false)
 
 // 灵感悬浮提示状态
 const showIdeaTooltip = ref(null)
+const activeIdeaTooltip = ref(null)
+const tooltipTimer = ref(null)
+
+// 处理灵感悬浮提示
+const handleIdeaMouseEnter = (ideaId) => {
+    if (tooltipTimer.value) {
+        clearTimeout(tooltipTimer.value)
+        tooltipTimer.value = null
+    }
+    if (!activeIdeaTooltip.value) {
+        showIdeaTooltip.value = ideaId
+        nextTick(() => positionTooltip())
+    }
+}
+
+const handleIdeaMouseLeave = (ideaId) => {
+    if (activeIdeaTooltip.value === ideaId) return // 如果是点击激活的，不隐藏
+    
+    tooltipTimer.value = setTimeout(() => {
+        if (showIdeaTooltip.value === ideaId) {
+            showIdeaTooltip.value = null
+        }
+    }, 200)
+}
+
+const toggleIdeaTooltip = (ideaId) => {
+    if (activeIdeaTooltip.value === ideaId) {
+        activeIdeaTooltip.value = null
+    } else {
+        activeIdeaTooltip.value = ideaId
+        showIdeaTooltip.value = null // 清除hover状态
+        nextTick(() => positionTooltip())
+    }
+}
+
+const hideIdeaTooltip = (ideaId) => {
+    if (activeIdeaTooltip.value === ideaId) {
+        activeIdeaTooltip.value = null
+    }
+}
+
+// 动态定位悬浮卡片
+const positionTooltip = () => {
+    const tooltip = document.querySelector('.idea-tooltip')
+    const activeLink = document.querySelector('.idea-link:focus, .idea-link:hover')
+    
+    if (tooltip && activeLink) {
+        const linkRect = activeLink.getBoundingClientRect()
+        const tooltipRect = tooltip.getBoundingClientRect()
+        
+        // 计算位置
+        let top = linkRect.top - tooltipRect.height - 8
+        let left = linkRect.left + (linkRect.width / 2) - (tooltipRect.width / 2)
+        
+        // 防止超出视窗边界
+        if (top < 10) {
+            top = linkRect.bottom + 8 // 如果上方空间不足，显示在下方
+        }
+        if (left < 10) {
+            left = 10
+        } else if (left + tooltipRect.width > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipRect.width - 10
+        }
+        
+        tooltip.style.top = `${top}px`
+        tooltip.style.left = `${left}px`
+    }
+}
 
 // 灵感数据
 const ideas = reactive([
@@ -600,7 +665,7 @@ const addToTodo = (index) => {
     const newBlock = {
         id: generateId(),
         type: 'todo',
-        content: `# ${idea.title}\n`,
+        content: `**${idea.title}**\n`,
         createdAt: new Date(),
         priority: 2
     }
@@ -765,10 +830,20 @@ const handleCommand = () => {
 
 // 创建新区域
 const createBlock = async (type, title = '', priority = 2) => {
+    let content = ''
+    if (title) {
+        // 对待办事项使用加粗格式，其他类型使用一级标题
+        if (type === 'todo') {
+            content = `**${title}**`
+        } else {
+            content = `# ${title}`
+        }
+    }
+    
     const newBlock = {
         id: generateId(),
         type: type,
-        content: title ? `# ${title}` : '',
+        content: content,
         createdAt: new Date()
     }
     
@@ -791,7 +866,7 @@ const createBlock = async (type, title = '', priority = 2) => {
         if (blockElement) {
             // 如果有标题，设置内容并将光标放到末尾
             if (title) {
-                blockElement.textContent = `# ${title}`
+                blockElement.textContent = content
                 blockElement.focus()
                 
                 // 设置光标到末尾
@@ -983,10 +1058,12 @@ const syncBlockToTodo = (block, blockIndex) => {
     const lines = block.content.split('\n').filter(line => line.trim())
     if (lines.length === 0) return
     
-    // 第一行作为标题，去掉可能的#前缀
+    // 第一行作为标题，去掉可能的#前缀或**包裹
     let title = lines[0].trim()
     if (title.startsWith('#')) {
         title = title.replace(/^#+\s*/, '').trim()
+    } else if (title.startsWith('**') && title.endsWith('**')) {
+        title = title.replace(/^\*\*|\*\*$/g, '').trim()
     }
     
     // 第二行开始作为详细内容
@@ -1087,100 +1164,19 @@ const formatCurrentDate = () => {
 const handleDateChange = (date) => {
     currentDate.value = date
     showDatePicker.value = false
-    // 保存当前日期到localStorage
-    localStorage.setItem('workspace-current-date', date.toISOString())
-    // 可以在这里添加根据日期加载对应内容的逻辑
     ElMessage.success(`日期已切换到 ${formatCurrentDate()}`)
 }
 
 
 
-// 组件挂载时恢复内容
-import { onMounted, onUnmounted, watch } from 'vue'
+// 组件挂载时初始化
+import { onMounted, onUnmounted } from 'vue'
 onMounted(() => {
-    // 恢复宽度设置
-    const savedWidths = localStorage.getItem('workspace-widths')
-    if (savedWidths) {
-        try {
-            const widths = JSON.parse(savedWidths)
-            leftWidth.value = widths.leftWidth || 280
-        } catch (error) {
-            console.warn('恢复宽度设置失败:', error)
-        }
-    }
-    
-    // 恢复活动标签
-    const savedActiveTab = localStorage.getItem('workspace-active-tab')
-    if (savedActiveTab) {
-        activeTab.value = savedActiveTab
-    }
-    
-    // 恢复当前日期
-    const savedDate = localStorage.getItem('workspace-current-date')
-    if (savedDate) {
-        currentDate.value = new Date(savedDate)
-    }
-    
-    // 恢复工作区块数据
-    const savedBlocks = localStorage.getItem('workspace-blocks')
-    if (savedBlocks) {
-        try {
-            const parsedBlocks = JSON.parse(savedBlocks)
-            blocks.splice(0, blocks.length, ...parsedBlocks)
-        } catch (error) {
-            console.warn('恢复工作区数据失败:', error)
-        }
-    }
-    
-    // 恢复待办事项数据
-    const savedTodos = localStorage.getItem('workspace-todos')
-    if (savedTodos) {
-        try {
-            const parsedTodos = JSON.parse(savedTodos)
-            // 恢复日期对象
-            parsedTodos.forEach(todo => {
-                if (todo.createdAt) todo.createdAt = new Date(todo.createdAt)
-                if (todo.completedAt) todo.completedAt = new Date(todo.completedAt)
-            })
-            todos.splice(0, todos.length, ...parsedTodos)
-        } catch (error) {
-            console.warn('恢复待办事项数据失败:', error)
-        }
-    }
-    
-    // 恢复灵感数据
-    const savedIdeas = localStorage.getItem('workspace-ideas')
-    if (savedIdeas) {
-        try {
-            const parsedIdeas = JSON.parse(savedIdeas)
-            // 恢复日期对象
-            parsedIdeas.forEach(idea => {
-                if (idea.createdAt) idea.createdAt = new Date(idea.createdAt)
-            })
-            ideas.splice(0, ideas.length, ...parsedIdeas)
-        } catch (error) {
-            console.warn('恢复灵感数据失败:', error)
-        }
-    }
-    
     // 添加全局键盘监听
     document.addEventListener('keydown', handleGlobalKeydown)
     
     // 监听窗口大小变化
     window.addEventListener('resize', handleWindowResize)
-    
-    // 监听数据变化并自动保存
-    watch(blocks, () => {
-        localStorage.setItem('workspace-blocks', JSON.stringify(blocks))
-    }, { deep: true })
-    
-    watch(todos, () => {
-        localStorage.setItem('workspace-todos', JSON.stringify(todos))
-    }, { deep: true })
-    
-    watch(ideas, () => {
-        localStorage.setItem('workspace-ideas', JSON.stringify(ideas))
-    }, { deep: true })
 })
 
 onUnmounted(() => {
@@ -1191,6 +1187,11 @@ onUnmounted(() => {
     // 清理拖拽事件
     if (isResizing.value) {
         stopResize()
+    }
+    
+    // 清理悬浮提示定时器
+    if (tooltipTimer.value) {
+        clearTimeout(tooltipTimer.value)
     }
 })
 
@@ -1427,6 +1428,7 @@ const handleWindowResize = () => {
     overflow-y: auto;
     margin-right: -16px;
     padding-right: 16px;
+    position: relative; /* 为悬浮卡片提供定位上下文 */
 }
 
 .todo-item {
@@ -1440,6 +1442,8 @@ const handleWindowResize = () => {
     transition: all 0.15s ease;
     font-size: 13px;
     background: #ffffff;
+    position: relative; /* 为悬浮卡片提供定位上下文 */
+    overflow: visible; /* 确保悬浮卡片不被裁剪 */
 }
 
 .todo-item:hover {
@@ -1508,11 +1512,18 @@ const handleWindowResize = () => {
     position: relative;
     font-size: 11px;
     color: #0369a1;
+    outline: none; /* 移除默认焦点轮廓 */
 }
 
 .idea-link:hover {
     background: #e0f2fe;
     border-color: #7dd3fc;
+}
+
+.idea-link:focus {
+    background: #e0f2fe;
+    border-color: #0369a1;
+    box-shadow: 0 0 0 2px rgba(3, 105, 161, 0.2);
 }
 
 .idea-icon {
@@ -1527,62 +1538,49 @@ const handleWindowResize = () => {
 }
 
 .idea-tooltip {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 8px;
+    position: fixed; /* 改为fixed定位，避免被父容器裁剪 */
     background: #ffffff;
     border: 1px solid #d1d5db;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    padding: 8px;
-    width: 200px;
-    z-index: 1000;
+    padding: 12px;
+    width: 240px;
+    z-index: 9999; /* 确保在最顶层 */
     font-size: 12px;
     line-height: 1.4;
-    max-height: 120px;
+    max-height: 150px;
     overflow-y: auto;
+    animation: tooltipFadeIn 0.2s ease-out;
 }
 
-.idea-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-    border-top-color: #ffffff;
-}
-
-.idea-tooltip::before {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #d1d5db;
-    margin-top: -1px;
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .tooltip-header {
-    margin-bottom: 6px;
-    padding-bottom: 4px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid #e5e7eb;
 }
 
 .tooltip-header h5 {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: #374151;
 }
 
 .tooltip-content {
     color: #6b7280;
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .todo-dates {
