@@ -192,25 +192,24 @@
                 </div>
                 <div class="bug-items">
                     <div 
-                        v-for="(bug, index) in bugs" 
+                        v-for="(bug, index) in sortedBugs" 
                         :key="index"
                         class="bug-item"
                         @click="showBugDetail(bug, index, $event)"
                     >
                         <div class="bug-header">
-                            <div class="bug-checkbox-container">
-                                <el-checkbox 
-                                    v-model="bug.fixed"
-                                    @click.stop
-                                    @change="toggleBugStatus(index)"
-                                    size="small"
-                                />
-                                <span class="bug-status-text">{{ bug.fixed ? '已修复' : '未修复' }}</span>
-                            </div>
+                            <h4 class="bug-title" :class="{ 'completed': bug.fixed }">{{ bug.title }}</h4>
+                            <el-checkbox 
+                                v-model="bug.fixed"
+                                @click.stop
+                                @change="toggleBugStatus(index)"
+                                size="small"
+                            />
+                        </div>
+                        <p class="bug-description">{{ bug.description }}</p>
+                        <div class="bug-footer">
                             <span class="bug-date">{{ formatDate(bug.createdAt) }}</span>
                         </div>
-                        <h4 class="bug-title">{{ bug.title }}</h4>
-                        <p class="bug-description">{{ bug.description }}</p>
                     </div>
                 </div>
             </div>
@@ -300,39 +299,19 @@
             class="bug-detail-card"
             :style="bugDetailCardStyle"
             @click.stop
+            @mousedown="startDrag"
         >
-            <div class="bug-detail-header">
-                <h4>{{ selectedBug?.title }}</h4>
-                <div class="bug-detail-status">
-                    <el-checkbox 
-                        v-model="selectedBug.fixed"
-                        @change="toggleBugStatus(selectedBugIndex)"
-                        size="small"
-                    />
-                    <span>{{ selectedBug?.fixed ? '已修复' : '未修复' }}</span>
-                </div>
+            <div class="bug-detail-header" @mousedown="startDrag">
+                <h4 :class="{ 'completed': selectedBug?.fixed }">{{ selectedBug?.title }}</h4>
             </div>
             <div class="bug-detail-content">
-                <div class="bug-detail-section">
-                    <h5>问题描述：</h5>
-                    <p>{{ selectedBug?.description }}</p>
-                </div>
-                <div class="bug-detail-section">
-                    <h5>追加信息：</h5>
-                    <p>{{ selectedBug?.additionalInfo }}</p>
-                </div>
+                <p class="bug-detail-description">{{ selectedBug?.description }}</p>
+                <p class="bug-detail-additional">{{ selectedBug?.additionalInfo }}</p>
                 <div class="bug-detail-date">
-                    创建时间：{{ formatDate(selectedBug?.createdAt) }}
+                    {{ formatDate(selectedBug?.createdAt) }}
                 </div>
             </div>
         </div>
-
-        <!-- 遮罩层 -->
-        <div 
-            v-if="showBugDetailCard"
-            class="bug-detail-overlay"
-            @click="closeBugDetail"
-        ></div>
     </div>
 </template>
 <script setup>
@@ -591,9 +570,9 @@ const bugs = reactive([
     {
         title: "登录页面样式问题",
         description: "在Chrome浏览器中，登录按钮在某些分辨率下会出现样式错位问题，导致按钮文字显示不完整。",
-        fixed: false, // true: 已修复, false: 未修复
+        fixed: false,
         additionalInfo: "初步排查是CSS样式问题，可能与flexbox兼容性有关。尝试修改了z-index和position属性，问题依然存在。计划使用媒体查询进行响应式适配。",
-        createdAt: new Date('2024-01-10')
+        createdAt: new Date('2024-01-12')
     },
     {
         title: "数据保存失败",
@@ -607,9 +586,28 @@ const bugs = reactive([
         description: "在搜索框输入特殊字符时，会导致页面崩溃或返回错误的搜索结果。",
         fixed: true,
         additionalInfo: "解决方案：对用户输入进行转义处理，使用正则表达式过滤特殊字符。已在前端和后端都添加了输入验证。测试通过，问题已解决。",
+        createdAt: new Date('2024-01-15')
+    },
+    {
+        title: "移动端适配问题",
+        description: "在移动设备上访问时，部分页面元素显示异常，影响用户体验。",
+        fixed: true,
+        additionalInfo: "通过媒体查询和响应式设计解决了大部分适配问题。已在多种设备上测试通过。",
         createdAt: new Date('2024-01-05')
     }
 ])
+
+// Bug排序计算属性：未修复的在前，按时间倒序
+const sortedBugs = computed(() => {
+    return [...bugs].sort((a, b) => {
+        // 首先按修复状态排序：未修复(false)在前，已修复(true)在后
+        if (a.fixed !== b.fixed) {
+            return a.fixed - b.fixed
+        }
+        // 相同状态下按创建时间倒序（较新的在前）
+        return new Date(b.createdAt) - new Date(a.createdAt)
+    })
+})
 
 // Bug悬浮卡片状态管理
 const showBugDetailCard = ref(false)
@@ -617,39 +615,107 @@ const selectedBug = ref(null)
 const selectedBugIndex = ref(-1)
 const bugDetailCardStyle = ref({})
 
+// 拖动相关状态
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
+const cardStartX = ref(0)
+const cardStartY = ref(0)
+
 // Bug悬浮卡片显示
 const showBugDetail = (bug, index, event) => {
     selectedBug.value = bug
     selectedBugIndex.value = index
     showBugDetailCard.value = true
     
-    // 计算悬浮卡片位置
-    const rect = event.currentTarget.getBoundingClientRect()
-    const cardWidth = 400
-    const cardHeight = 300
-    
-    let left = rect.right + 10
-    let top = rect.top
-    
-    // 防止卡片超出屏幕右边界
-    if (left + cardWidth > window.innerWidth) {
-        left = rect.left - cardWidth - 10
-    }
-    
-    // 防止卡片超出屏幕下边界
-    if (top + cardHeight > window.innerHeight) {
-        top = window.innerHeight - cardHeight - 10
-    }
-    
-    // 防止卡片超出屏幕上边界
-    if (top < 10) {
-        top = 10
-    }
+    // 将卡片左上角定位在点击位置
+    const clickX = event.clientX
+    const clickY = event.clientY
     
     bugDetailCardStyle.value = {
-        left: left + 'px',
-        top: top + 'px'
+        left: clickX + 'px',
+        top: clickY + 'px',
+        transform: 'translate(0, 0)'
     }
+}
+
+// 开始拖动
+const startDrag = (event) => {
+    if (event.target.closest('.bug-detail-header')) {
+        isDragging.value = true
+        dragStartX.value = event.clientX
+        dragStartY.value = event.clientY
+        
+        const currentLeft = parseInt(bugDetailCardStyle.value.left) || 0
+        const currentTop = parseInt(bugDetailCardStyle.value.top) || 0
+        cardStartX.value = currentLeft
+        cardStartY.value = currentTop
+        
+        document.addEventListener('mousemove', handleDrag, { passive: true })
+        document.addEventListener('mouseup', stopDrag)
+        document.body.style.cursor = 'move'
+        document.body.style.userSelect = 'none'
+        
+        event.preventDefault()
+    }
+}
+
+// 处理拖动 - 使用 requestAnimationFrame 优化性能
+let rafId = null
+const handleDrag = (event) => {
+    if (!isDragging.value) return
+    
+    if (rafId) {
+        cancelAnimationFrame(rafId)
+    }
+    
+    rafId = requestAnimationFrame(() => {
+        const deltaX = event.clientX - dragStartX.value
+        const deltaY = event.clientY - dragStartY.value
+        
+        // 取消区域限制，允许拖动到屏幕外
+        bugDetailCardStyle.value = {
+            left: cardStartX.value + 'px',
+            top: cardStartY.value + 'px',
+            transform: `translate(${deltaX}px, ${deltaY}px)`
+        }
+    })
+}
+
+// 停止拖动
+const stopDrag = () => {
+    if (rafId) {
+        cancelAnimationFrame(rafId)
+        rafId = null
+    }
+    
+    if (isDragging.value) {
+        // 最终位置确定后，更新实际的 left/top 值，清除 transform
+        const currentTransform = bugDetailCardStyle.value.transform
+        if (currentTransform && currentTransform !== 'translate(0, 0)') {
+            const matches = currentTransform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/)
+            if (matches) {
+                const deltaX = parseFloat(matches[1])
+                const deltaY = parseFloat(matches[2])
+                
+                const newLeft = cardStartX.value + deltaX
+                const newTop = cardStartY.value + deltaY
+                
+                // 取消区域限制，允许在任意位置
+                bugDetailCardStyle.value = {
+                    left: newLeft + 'px',
+                    top: newTop + 'px',
+                    transform: 'translate(0, 0)'
+                }
+            }
+        }
+    }
+    
+    isDragging.value = false
+    document.removeEventListener('mousemove', handleDrag)
+    document.removeEventListener('mouseup', stopDrag)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
 }
 
 // 关闭Bug详情卡片
@@ -657,6 +723,20 @@ const closeBugDetail = () => {
     showBugDetailCard.value = false
     selectedBug.value = null
     selectedBugIndex.value = -1
+}
+
+// 处理全局点击事件
+const handleGlobalClick = (event) => {
+    if (showBugDetailCard.value) {
+        // 检查点击是否在卡片内部
+        const bugCard = event.target.closest('.bug-detail-card')
+        const bugItem = event.target.closest('.bug-item')
+        
+        // 如果点击不在卡片内部且不在Bug列表项上，则关闭卡片
+        if (!bugCard && !bugItem) {
+            closeBugDetail()
+        }
+    }
 }
 
 // 切换Bug状态
@@ -1264,12 +1344,18 @@ onMounted(() => {
     
     // 监听窗口大小变化
     window.addEventListener('resize', handleWindowResize)
+    
+    // 添加全局点击监听，用于关闭Bug详情卡片
+    document.addEventListener('click', handleGlobalClick)
 })
 
 onUnmounted(() => {
     // 移除全局键盘监听
     document.removeEventListener('keydown', handleGlobalKeydown)
     window.removeEventListener('resize', handleWindowResize)
+    
+    // 移除全局点击监听
+    document.removeEventListener('click', handleGlobalClick)
     
     // 清理拖拽事件
     if (isResizing.value) {
@@ -1873,159 +1959,152 @@ const handleWindowResize = () => {
 }
 
 .bug-item {
-    padding: 12px;
-    margin-bottom: 8px;
+    padding: 10px;
+    margin-bottom: 6px;
     border: 1px solid #e1e4e8;
-    border-radius: 6px;
+    border-radius: 4px;
     transition: all 0.15s ease;
     font-size: 13px;
     background: #ffffff;
-    height: 120px;
-    display: flex;
-    flex-direction: column;
     cursor: pointer;
     position: relative;
-    overflow: hidden;
 }
 
 .bug-item:hover {
     background-color: #f6f8fa;
     border-color: #d0d7de;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .bug-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 8px;
-    flex-shrink: 0;
-}
-
-.bug-checkbox-container {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.bug-status-text {
-    font-size: 12px;
-    color: #656d76;
-    font-weight: 500;
 }
 
 .bug-title {
-    margin: 0 0 8px 0;
+    margin: 0;
     font-size: 14px;
     font-weight: 600;
     color: #24292f;
-    flex-shrink: 0;
+    flex: 1;
     line-height: 1.2;
+    margin-right: 8px;
+}
+
+.bug-title.completed {
+    text-decoration: line-through;
+    color: #8b949e;
 }
 
 .bug-description {
     font-size: 12px;
     color: #656d76;
     line-height: 1.4;
-    margin: 0;
-    flex: 1;
+    margin: 4px 0 6px 0;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+.bug-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
 .bug-date {
-    font-size: 11px;
+    font-size: 12px;
     color: #c0c4cc;
 }
 
 /* Bug详情悬浮卡片样式 */
-.bug-detail-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-}
-
 .bug-detail-card {
     position: fixed;
-    width: 400px;
-    max-height: 500px;
+    width: 350px;
     background: #ffffff;
     border: 1px solid #d0d7de;
-    border-radius: 8px;
+    border-radius: 6px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     z-index: 1001;
     overflow: hidden;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
 }
 
 .bug-detail-header {
-    padding: 16px 20px 12px;
+    padding: 12px 16px;
     border-bottom: 1px solid #e1e4e8;
     background: #f6f8fa;
+    cursor: move;
+    user-select: none;
+    position: relative;
+}
+
+.bug-detail-header:hover {
+    background: #f0f3f6;
+}
+
+.bug-detail-header::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background-image: 
+        radial-gradient(circle, #8b949e 1px, transparent 1px),
+        radial-gradient(circle, #8b949e 1px, transparent 1px);
+    background-size: 4px 4px;
+    background-position: 0 0, 2px 2px;
+    opacity: 0.6;
 }
 
 .bug-detail-header h4 {
-    margin: 0 0 8px 0;
-    font-size: 16px;
+    margin: 0;
+    font-size: 14px;
     font-weight: 600;
     color: #24292f;
     line-height: 1.3;
 }
 
-.bug-detail-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.bug-detail-status span {
-    font-size: 13px;
-    color: #656d76;
-    font-weight: 500;
+.bug-detail-header h4.completed {
+    text-decoration: line-through;
+    color: #8b949e;
 }
 
 .bug-detail-content {
-    padding: 16px 20px 20px;
-    max-height: 350px;
-    overflow-y: auto;
+    padding: 12px 16px;
 }
 
-.bug-detail-section {
-    margin-bottom: 16px;
-}
-
-.bug-detail-section:last-of-type {
-    margin-bottom: 12px;
-}
-
-.bug-detail-section h5 {
-    margin: 0 0 8px 0;
+.bug-detail-description {
+    margin: 0 0 12px 0;
     font-size: 13px;
-    font-weight: 600;
     color: #24292f;
+    line-height: 1.5;
+    word-wrap: break-word;
 }
 
-.bug-detail-section p {
-    margin: 0;
-    font-size: 13px;
+.bug-detail-additional {
+    margin: 0 0 12px 0;
+    font-size: 12px;
     color: #656d76;
     line-height: 1.5;
     word-wrap: break-word;
 }
 
 .bug-detail-date {
-    font-size: 12px;
+    font-size: 11px;
     color: #8b949e;
     text-align: right;
     border-top: 1px solid #e1e4e8;
-    padding-top: 12px;
+    padding-top: 8px;
+    margin-top: 8px;
 }
 
 /* 主编辑器样式 */
