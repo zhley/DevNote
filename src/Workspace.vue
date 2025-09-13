@@ -240,7 +240,7 @@
                     <el-input
                         ref="commandInputRef"
                         v-model="commandInput"
-                        placeholder="输入 /p(进度), /t(待办), /b(缺陷), /i(灵感), /n(笔记) 来创建对应区域"
+                        placeholder="输入 /t 标题 -p 1-3 创建待办，/b /i /n /p 标题 创建其他区域"
                         @keydown.enter="handleCommand"
                         clearable
                     />
@@ -626,7 +626,11 @@ const getBlockTypeLabel = (type) => {
 
 // 处理命令输入
 const handleCommand = () => {
-    const command = commandInput.value.trim().toLowerCase()
+    const input = commandInput.value.trim()
+    
+    // 解析命令和参数
+    const parts = input.split(' ')
+    const command = parts[0].toLowerCase()
     const validCommands = ['/p', '/t', '/b', '/i', '/n']
     
     if (validCommands.includes(command)) {
@@ -638,21 +642,55 @@ const handleCommand = () => {
             '/n': 'note'
         }
         const type = typeMap[command]
-        createBlock(type)
+        
+        // 解析参数
+        let title = ''
+        let priority = 2 // 默认优先级为中等
+        
+        // 解析标题参数（所有命令都支持）
+        const titleIndex = parts.findIndex(part => !part.startsWith('-') && part !== command)
+        if (titleIndex !== -1) {
+            // 提取标题，可能包含多个单词
+            const titleParts = []
+            for (let i = titleIndex; i < parts.length; i++) {
+                if (parts[i].startsWith('-')) break
+                titleParts.push(parts[i])
+            }
+            title = titleParts.join(' ')
+        }
+        
+        // 解析优先级参数（仅对 /t 命令有效）
+        if (command === '/t') {
+            const priorityIndex = parts.findIndex(part => part === '-p')
+            if (priorityIndex !== -1 && priorityIndex + 1 < parts.length) {
+                const priorityValue = parseInt(parts[priorityIndex + 1])
+                if (!isNaN(priorityValue) && priorityValue >= 1 && priorityValue <= 3) {
+                    priority = priorityValue
+                }
+            }
+        }
+        
+        createBlock(type, title, priority)
         commandInput.value = ''
-    } else if (command.startsWith('/')) {
+    } else if (input.startsWith('/')) {
         ElMessage.warning('无效命令，请使用 /p, /t, /b, /i, /n')
     }
 }
 
 // 创建新区域
-const createBlock = async (type) => {
+const createBlock = async (type, title = '', priority = 2) => {
     const newBlock = {
         id: generateId(),
         type: type,
-        content: '',
+        content: title ? `# ${title}` : '',
         createdAt: new Date()
     }
+    
+    // 为待办事项类型添加优先级属性
+    if (type === 'todo') {
+        newBlock.priority = priority
+    }
+    
     blocks.push(newBlock)
     
     // 设置为编辑模式
@@ -665,21 +703,45 @@ const createBlock = async (type) => {
     setTimeout(() => {
         const blockElement = blockRefs.get(newBlock.id)
         if (blockElement) {
-            // 确保内容为空
-            blockElement.textContent = ''
-            blockElement.focus()
-            
-            // 设置光标到开始位置
-            const range = document.createRange()
-            const selection = window.getSelection()
-            range.setStart(blockElement, 0)
-            range.setEnd(blockElement, 0)
-            selection.removeAllRanges()
-            selection.addRange(range)
+            // 如果有标题，设置内容并将光标放到末尾
+            if (title) {
+                blockElement.textContent = `# ${title}`
+                blockElement.focus()
+                
+                // 设置光标到末尾
+                const range = document.createRange()
+                const selection = window.getSelection()
+                range.selectNodeContents(blockElement)
+                range.collapse(false) // 折叠到末尾
+                selection.removeAllRanges()
+                selection.addRange(range)
+            } else {
+                // 没有标题时，确保内容为空并聚焦
+                blockElement.textContent = ''
+                blockElement.focus()
+                
+                // 设置光标到开始位置
+                const range = document.createRange()
+                const selection = window.getSelection()
+                range.setStart(blockElement, 0)
+                range.setEnd(blockElement, 0)
+                selection.removeAllRanges()
+                selection.addRange(range)
+            }
         }
     }, 10)
     
-    ElMessage.success(`${getBlockTypeLabel(type)}区域已创建`)
+    // 构建提示消息
+    let message = `${getBlockTypeLabel(type)}区域已创建`
+    if (title) {
+        message += `：${title}`
+    }
+    if (type === 'todo' && priority !== 2) {
+        const priorityText = getPriorityText(priority)
+        message += ` (优先级：${priorityText})`
+    }
+    
+    ElMessage.success(message)
 }
 
 // 处理区域获得焦点
