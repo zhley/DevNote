@@ -78,6 +78,33 @@
                                 >
                                     {{ getPriorityText(todo.priority) }}
                                 </el-tag>
+                                <!-- 灵感链接 -->
+                                <div 
+                                    v-if="todo.ideaId" 
+                                    class="idea-link"
+                                    @mouseenter="showIdeaTooltip = todo.ideaId"
+                                    @mouseleave="showIdeaTooltip = null"
+                                >
+                                    <el-icon class="idea-icon">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/>
+                                        </svg>
+                                    </el-icon>
+                                    <span class="idea-text">来自灵感</span>
+                                    
+                                    <!-- 悬浮卡片 -->
+                                    <div 
+                                        v-if="showIdeaTooltip === todo.ideaId" 
+                                        class="idea-tooltip"
+                                    >
+                                        <div class="tooltip-header">
+                                            <h5>{{ todo.ideaId }}</h5>
+                                        </div>
+                                        <div class="tooltip-content">
+                                            {{ todo.ideaContent }}
+                                        </div>
+                                    </div>
+                                </div>
                                 <span class="todo-dates">
                                     <span class="created-date">{{ formatDateTime(todo.createdAt) }}</span>
                                     <span v-if="todo.finished && todo.completedAt" class="completed-date">
@@ -427,6 +454,9 @@ const todos = reactive([
 const expandedTodos = reactive(new Set())
 const allTodosExpanded = ref(false)
 
+// 灵感悬浮提示状态
+const showIdeaTooltip = ref(null)
+
 // 灵感数据
 const ideas = reactive([
     {
@@ -566,19 +596,55 @@ const addToTodo = (index) => {
     const idea = ideas[index]
     idea.status = 'in-progress'
     
+    // 创建新的工作区块
+    const newBlock = {
+        id: generateId(),
+        type: 'todo',
+        content: `# ${idea.title}\n`,
+        createdAt: new Date(),
+        priority: 2
+    }
+    
     // 创建对应的待办事项
     const newTodo = {
         title: idea.title,
-        content: idea.content,
-        priority: 2, // 默认中等优先级
+        content: '', // 初始为空，等待工作区块编辑
+        priority: 2,
         finished: false,
         createdAt: new Date(),
         completedAt: null,
-        blockId: idea.blockId // 关联相同的块ID
+        blockId: newBlock.id,
+        ideaId: idea.title, // 关联灵感ID，用于悬浮卡片
+        ideaContent: idea.content // 存储灵感内容用于悬浮显示
     }
     
+    // 添加到数组
+    blocks.push(newBlock)
     todos.unshift(newTodo)
-    ElMessage.success('已加入待办清单')
+    
+    // 设置为编辑模式并聚焦
+    editingBlockId.value = newBlock.id
+    
+    // 等待DOM更新后聚焦到新区域
+    nextTick(() => {
+        setTimeout(() => {
+            const blockElement = blockRefs.get(newBlock.id)
+            if (blockElement) {
+                blockElement.textContent = newBlock.content
+                blockElement.focus()
+                
+                // 设置光标到末尾
+                const range = document.createRange()
+                const selection = window.getSelection()
+                range.selectNodeContents(blockElement)
+                range.collapse(false)
+                selection.removeAllRanges()
+                selection.addRange(range)
+            }
+        }, 10)
+    })
+    
+    ElMessage.success('已加入待办清单并创建工作区块')
 }
 
 // 获取状态文本
@@ -929,27 +995,34 @@ const syncBlockToTodo = (block, blockIndex) => {
     // 获取优先级（如果块有优先级属性）
     const priority = block.priority || 2
     
-    // 创建新的待办事项
-    const newTodo = {
-        title: title,
-        content: content,
-        priority: priority,
-        finished: false,
-        createdAt: new Date(),
-        completedAt: null,
-        blockId: block.id // 关联到原始块
-    }
-    
     // 检查是否已存在相同blockId的待办事项
     const existingIndex = todos.findIndex(todo => todo.blockId === block.id)
     if (existingIndex !== -1) {
         // 更新existing todo
-        todos[existingIndex].title = title
-        todos[existingIndex].content = content
-        todos[existingIndex].priority = priority
+        const existingTodo = todos[existingIndex]
+        existingTodo.title = title
+        
+        // 如果是从灵感创建的待办，将工作区内容追加到原有内容
+        if (existingTodo.ideaId && content) {
+            existingTodo.content = content
+        } else {
+            existingTodo.content = content
+        }
+        
+        existingTodo.priority = priority
         ElMessage.success('待办事项已更新')
     } else {
-        // 添加新的待办事项
+        // 创建新的待办事项
+        const newTodo = {
+            title: title,
+            content: content,
+            priority: priority,
+            finished: false,
+            createdAt: new Date(),
+            completedAt: null,
+            blockId: block.id // 关联到原始块
+        }
+        
         todos.unshift(newTodo)
         ElMessage.success('已添加到待办清单')
     }
@@ -1419,6 +1492,97 @@ const handleWindowResize = () => {
     margin-top: 6px;
     padding-top: 4px;
     border-top: 1px solid #f1f3f4;
+    flex-wrap: wrap;
+}
+
+.idea-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    font-size: 11px;
+    color: #0369a1;
+}
+
+.idea-link:hover {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+}
+
+.idea-icon {
+    font-size: 12px;
+    color: #0369a1;
+}
+
+.idea-text {
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.idea-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    width: 200px;
+    z-index: 1000;
+    font-size: 12px;
+    line-height: 1.4;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.idea-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #ffffff;
+}
+
+.idea-tooltip::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #d1d5db;
+    margin-top: -1px;
+}
+
+.tooltip-header {
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.tooltip-header h5 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.tooltip-content {
+    color: #6b7280;
+    font-size: 11px;
+    line-height: 1.4;
 }
 
 .todo-dates {
