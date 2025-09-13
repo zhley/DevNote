@@ -852,6 +852,31 @@ const handleGlobalKeydown = (event) => {
 
 // 处理区域内按键事件
 const handleBlockKeydown = (event, index) => {
+    // 检查是否按下了ESC键
+    if (event.key === 'Escape') {
+        event.preventDefault()
+        
+        // 退出编辑模式
+        const target = event.target
+        const content = target.textContent || target.innerText || ''
+        const block = blocks[index]
+        block.content = content
+        editingBlockId.value = null
+        
+        // 如果是待办或灵感类型的块，且有内容，则同步到对应的列表
+        if (content.trim()) {
+            if (block.type === 'todo') {
+                syncBlockToTodo(block, index)
+            } else if (block.type === 'idea') {
+                syncBlockToIdea(block, index)
+            }
+        }
+        
+        // 移除焦点
+        target.blur()
+        return
+    }
+    
     // 检查是否按下了退格键或删除键
     if (event.key === 'Backspace' || event.key === 'Delete') {
         const target = event.target
@@ -864,6 +889,19 @@ const handleBlockKeydown = (event, index) => {
             // 获取block信息用于提示
             const block = blocks[index]
             const blockType = getBlockTypeLabel(block.type)
+            
+            // 删除关联的待办事项或灵感（工作区 → 列表同步）
+            if (block.type === 'todo' && block.id) {
+                const todoIndex = todos.findIndex(todo => todo.blockId === block.id)
+                if (todoIndex !== -1) {
+                    todos.splice(todoIndex, 1)
+                }
+            } else if (block.type === 'idea' && block.id) {
+                const ideaIndex = ideas.findIndex(idea => idea.blockId === block.id)
+                if (ideaIndex !== -1) {
+                    ideas.splice(ideaIndex, 1)
+                }
+            }
             
             // 删除block
             blocks.splice(index, 1)
