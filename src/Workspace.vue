@@ -400,7 +400,8 @@ const todos = reactive([
         priority: 3,
         finished: false,
         createdAt: new Date('2024-10-11'),
-        completedAt: null
+        completedAt: null,
+        blockId: null // 用于关联工作区块
     },
     {
         title: "优化代码性能",
@@ -408,7 +409,8 @@ const todos = reactive([
         priority: 2,
         finished: false,
         createdAt: new Date('2024-10-15'),
-        completedAt: null
+        completedAt: null,
+        blockId: null
     },
     {
         title: "学习新技术框架",
@@ -416,7 +418,8 @@ const todos = reactive([
         priority: 1,
         finished: true,
         createdAt: new Date('2024-09-20'),
-        completedAt: new Date('2024-11-10')
+        completedAt: new Date('2024-11-10'),
+        blockId: null
     }
 ])
 
@@ -430,19 +433,22 @@ const ideas = reactive([
         title: "移动端适配方案",
         content: "考虑使用 CSS Grid 和 Flexbox 结合的方式来实现响应式布局，可以更好地适配不同屏幕尺寸。",
         createdAt: new Date('2024-01-15'),
-        status: 'pending' // pending, in-progress, implemented, discarded
+        status: 'pending', // pending, in-progress, implemented, discarded
+        blockId: null // 用于关联工作区块
     },
     {
         title: "用户体验优化",
         content: "添加骨架屏加载效果，减少用户等待时的焦虑感，同时考虑添加懒加载来提升页面性能。",
         createdAt: new Date('2024-01-14'),
-        status: 'in-progress'
+        status: 'in-progress',
+        blockId: null
     },
     {
         title: "数据可视化",
         content: "使用 ECharts 或 D3.js 来创建交互式图表，让数据展示更加直观和美观。",
         createdAt: new Date('2024-01-13'),
-        status: 'implemented'
+        status: 'implemented',
+        blockId: null
     }
 ])
 
@@ -483,6 +489,11 @@ const toggleTodo = (index) => {
     } else {
         todo.completedAt = new Date()
         ElMessage.success('任务已完成！')
+    }
+    
+    // 如果待办事项关联了工作区块，同步更新块的内容
+    if (todo.blockId) {
+        syncTodoToBlock(todo)
     }
 }
 
@@ -542,7 +553,17 @@ const getPriorityText = (priority) => {
 
 // 废弃灵感
 const discardIdea = (index) => {
-    ideas[index].status = 'discarded'
+    const idea = ideas[index]
+    idea.status = 'discarded'
+    
+    // 如果关联了工作区块，删除对应的块
+    if (idea.blockId) {
+        const blockIndex = blocks.findIndex(block => block.id === idea.blockId)
+        if (blockIndex !== -1) {
+            blocks.splice(blockIndex, 1)
+        }
+    }
+    
     ElMessage.success('灵感已废弃')
 }
 
@@ -557,8 +578,22 @@ const toggleIdeaExpansion = (index) => {
 
 // 加入待办
 const addToTodo = (index) => {
-    ideas[index].status = 'in-progress'
-    ElMessage.success('已加入待办')
+    const idea = ideas[index]
+    idea.status = 'in-progress'
+    
+    // 创建对应的待办事项
+    const newTodo = {
+        title: idea.title,
+        content: idea.content,
+        priority: 2, // 默认中等优先级
+        finished: false,
+        createdAt: new Date(),
+        completedAt: null,
+        blockId: idea.blockId // 关联相同的块ID
+    }
+    
+    todos.unshift(newTodo)
+    ElMessage.success('已加入待办清单')
 }
 
 // 获取状态文本
@@ -744,6 +779,42 @@ const createBlock = async (type, title = '', priority = 2) => {
     ElMessage.success(message)
 }
 
+// 同步待办事项到工作区块
+const syncTodoToBlock = (todo) => {
+    if (!todo.blockId) return
+    
+    const blockIndex = blocks.findIndex(block => block.id === todo.blockId)
+    if (blockIndex !== -1) {
+        const block = blocks[blockIndex]
+        // 更新块内容
+        let content = `# ${todo.title}`
+        if (todo.content.trim()) {
+            content += `\n${todo.content}`
+        }
+        if (todo.finished) {
+            content += `\n\n**状态：已完成** ✅`
+        }
+        block.content = content
+    }
+}
+
+// 同步灵感到工作区块
+const syncIdeaToBlock = (idea) => {
+    if (!idea.blockId) return
+    
+    const blockIndex = blocks.findIndex(block => block.id === idea.blockId)
+    if (blockIndex !== -1) {
+        const block = blocks[blockIndex]
+        // 更新块内容
+        let content = `# ${idea.title}`
+        if (idea.content.trim()) {
+            content += `\n${idea.content}`
+        }
+        content += `\n\n**状态：${getStatusText(idea.status)}**`
+        block.content = content
+    }
+}
+
 // 处理区域获得焦点
 const handleBlockFocus = (blockId) => {
     editingBlockId.value = blockId
@@ -776,8 +847,18 @@ const handleBlockFocus = (blockId) => {
 const handleBlockBlur = (index, blockId, event) => {
     // 保存原始内容，保持换行符
     const content = event.target.innerText || event.target.textContent || ''
-    blocks[index].content = content
+    const block = blocks[index]
+    block.content = content
     editingBlockId.value = null
+    
+    // 如果是待办或灵感类型的块，且有内容，则同步到对应的列表
+    if (content.trim()) {
+        if (block.type === 'todo') {
+            syncBlockToTodo(block, index)
+        } else if (block.type === 'idea') {
+            syncBlockToIdea(block, index)
+        }
+    }
 }
 
 // 处理粘贴事件，确保粘贴纯文本
@@ -835,12 +916,105 @@ const handleBlockKeydown = (event, index) => {
             const block = blocks[index]
             const blockType = getBlockTypeLabel(block.type)
             
+            // 删除关联的待办事项或灵感
+            if (block.type === 'todo' && block.id) {
+                const todoIndex = todos.findIndex(todo => todo.blockId === block.id)
+                if (todoIndex !== -1) {
+                    todos.splice(todoIndex, 1)
+                }
+            } else if (block.type === 'idea' && block.id) {
+                const ideaIndex = ideas.findIndex(idea => idea.blockId === block.id)
+                if (ideaIndex !== -1) {
+                    ideas.splice(ideaIndex, 1)
+                }
+            }
+            
             // 删除block
             blocks.splice(index, 1)
             editingBlockId.value = null
             
             ElMessage.success(`${blockType}区域已删除`)
         }
+    }
+}
+
+// 同步块内容到待办清单
+const syncBlockToTodo = (block, blockIndex) => {
+    const lines = block.content.split('\n').filter(line => line.trim())
+    if (lines.length === 0) return
+    
+    // 第一行作为标题，去掉可能的#前缀
+    let title = lines[0].trim()
+    if (title.startsWith('#')) {
+        title = title.replace(/^#+\s*/, '').trim()
+    }
+    
+    // 第二行开始作为详细内容
+    const content = lines.slice(1).join('\n').trim()
+    
+    // 获取优先级（如果块有优先级属性）
+    const priority = block.priority || 2
+    
+    // 创建新的待办事项
+    const newTodo = {
+        title: title,
+        content: content,
+        priority: priority,
+        finished: false,
+        createdAt: new Date(),
+        completedAt: null,
+        blockId: block.id // 关联到原始块
+    }
+    
+    // 检查是否已存在相同blockId的待办事项
+    const existingIndex = todos.findIndex(todo => todo.blockId === block.id)
+    if (existingIndex !== -1) {
+        // 更新existing todo
+        todos[existingIndex].title = title
+        todos[existingIndex].content = content
+        todos[existingIndex].priority = priority
+        ElMessage.success('待办事项已更新')
+    } else {
+        // 添加新的待办事项
+        todos.unshift(newTodo)
+        ElMessage.success('已添加到待办清单')
+    }
+}
+
+// 同步块内容到灵感池
+const syncBlockToIdea = (block, blockIndex) => {
+    const lines = block.content.split('\n').filter(line => line.trim())
+    if (lines.length === 0) return
+    
+    // 第一行作为标题，去掉可能的#前缀
+    let title = lines[0].trim()
+    if (title.startsWith('#')) {
+        title = title.replace(/^#+\s*/, '').trim()
+    }
+    
+    // 第二行开始作为详细内容
+    const content = lines.slice(1).join('\n').trim()
+    
+    // 创建新的灵感
+    const newIdea = {
+        title: title,
+        content: content,
+        createdAt: new Date(),
+        status: 'pending',
+        blockId: block.id // 关联到原始块
+    }
+    
+    // 检查是否已存在相同blockId的灵感
+    const existingIndex = ideas.findIndex(idea => idea.blockId === block.id)
+    if (existingIndex !== -1) {
+        // 更新existing idea
+        ideas[existingIndex].title = title
+        ideas[existingIndex].content = content
+        ElMessage.success('灵感已更新')
+    } else {
+        // 添加新的灵感
+        ideas.unshift(newIdea)
+        ElMessage.success('已添加到灵感池')
     }
 }
 
@@ -875,7 +1049,7 @@ const handleDateChange = (date) => {
 
 
 // 组件挂载时恢复内容
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 onMounted(() => {
     // 恢复宽度设置
     const savedWidths = localStorage.getItem('workspace-widths')
@@ -911,11 +1085,55 @@ onMounted(() => {
         }
     }
     
+    // 恢复待办事项数据
+    const savedTodos = localStorage.getItem('workspace-todos')
+    if (savedTodos) {
+        try {
+            const parsedTodos = JSON.parse(savedTodos)
+            // 恢复日期对象
+            parsedTodos.forEach(todo => {
+                if (todo.createdAt) todo.createdAt = new Date(todo.createdAt)
+                if (todo.completedAt) todo.completedAt = new Date(todo.completedAt)
+            })
+            todos.splice(0, todos.length, ...parsedTodos)
+        } catch (error) {
+            console.warn('恢复待办事项数据失败:', error)
+        }
+    }
+    
+    // 恢复灵感数据
+    const savedIdeas = localStorage.getItem('workspace-ideas')
+    if (savedIdeas) {
+        try {
+            const parsedIdeas = JSON.parse(savedIdeas)
+            // 恢复日期对象
+            parsedIdeas.forEach(idea => {
+                if (idea.createdAt) idea.createdAt = new Date(idea.createdAt)
+            })
+            ideas.splice(0, ideas.length, ...parsedIdeas)
+        } catch (error) {
+            console.warn('恢复灵感数据失败:', error)
+        }
+    }
+    
     // 添加全局键盘监听
     document.addEventListener('keydown', handleGlobalKeydown)
     
     // 监听窗口大小变化
     window.addEventListener('resize', handleWindowResize)
+    
+    // 监听数据变化并自动保存
+    watch(blocks, () => {
+        localStorage.setItem('workspace-blocks', JSON.stringify(blocks))
+    }, { deep: true })
+    
+    watch(todos, () => {
+        localStorage.setItem('workspace-todos', JSON.stringify(todos))
+    }, { deep: true })
+    
+    watch(ideas, () => {
+        localStorage.setItem('workspace-ideas', JSON.stringify(ideas))
+    }, { deep: true })
 })
 
 onUnmounted(() => {
