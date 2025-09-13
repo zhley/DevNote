@@ -653,7 +653,7 @@ const startDrag = (event) => {
         
         document.addEventListener('mousemove', handleDrag, { passive: true })
         document.addEventListener('mouseup', stopDrag)
-        document.body.style.cursor = 'move'
+        document.body.style.cursor = 'default'
         document.body.style.userSelect = 'none'
         
         event.preventDefault()
@@ -2040,7 +2040,7 @@ const handleWindowResize = () => {
     padding: 12px 16px;
     border-bottom: 1px solid #e1e4e8;
     background: #f6f8fa;
-    cursor: move;
+    cursor: default;
     user-select: none;
     position: relative;
 }
