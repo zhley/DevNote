@@ -2452,8 +2452,11 @@ textarea.block-content.editing {
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
-    padding: inherit;
+    padding: 12px 16px; /* 增加内边距，让文字离边缘更远 */
     margin: 0;
+    border: none; /* 去掉边框 */
+    background: inherit; /* 继承背景色 */
+    border-radius: inherit; /* 继承圆角 */
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
