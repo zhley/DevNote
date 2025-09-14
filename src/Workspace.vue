@@ -258,19 +258,19 @@
                     :data-type="getBlockTypeLabel(block.type)"
                     :data-block-id="block.id"
                 >
-                    <!-- 编辑模式 -->
-                    <div 
+                    <!-- 编辑模式 - 使用textarea和v-model实现双向绑定 -->
+                    <textarea 
                         v-if="isBlockEditing(block.id)"
                         class="block-content editing"
-                        :contenteditable="true"
+                        v-model="block.content"
                         :ref="(el) => setBlockRef(el, block.id)"
                         @blur="handleBlockBlur(index, block.id, $event)"
                         @paste="handleBlockPaste"
                         @keydown="handleBlockKeydown($event, index)"
-                        v-text="block.content"
-                    ></div>
+                        rows="1"
+                    ></textarea>
                     
-                    <!-- 预览模式 -->
+                    <!-- 预览模式 - 只读，渲染content内容 -->
                     <div 
                         v-else
                         class="block-content preview"
@@ -429,6 +429,22 @@ const stopResize = () => {
 const setBlockRef = (el, blockId) => {
     if (el) {
         blockRefs.set(blockId, el)
+        
+        // 如果是textarea，添加自动调整高度功能
+        if (el.tagName === 'TEXTAREA') {
+            const adjustHeight = () => {
+                el.style.height = 'auto'
+                el.style.height = Math.max(40, el.scrollHeight) + 'px'
+            }
+            
+            // 初始调整
+            nextTick(() => {
+                adjustHeight()
+            })
+            
+            // 监听输入事件
+            el.addEventListener('input', adjustHeight)
+        }
     }
 }
 
@@ -919,13 +935,12 @@ const addToTodo = (index) => {
     const idea = ideas[index]
     idea.status = 'in-progress'
     
-    // 创建新的工作区块
+    // 创建新的工作区块 - 按照用户思路重构
     const newBlock = {
         id: generateId(),
         type: 'todo',
         content: `**${idea.title}**\n`,
-        createdAt: new Date(),
-        priority: 2
+        priority: 2  // todo类型才有优先级字段
     }
     
     // 创建对应的待办事项
@@ -1069,11 +1084,11 @@ const createBlock = async (type, title = '', priority = 2) => {
         }
     }
     
+    // 按照用户思路重构block数据结构
     const newBlock = {
         id: generateId(),
         type: type,
-        content: content,
-        createdAt: new Date()
+        content: content
     }
     
     // 为待办事项类型添加优先级属性
@@ -1164,14 +1179,12 @@ const handleBlockFocus = (blockId) => {
 
 // 处理区域失去焦点
 const handleBlockBlur = (index, blockId, event) => {
-    // 保存原始内容，保持换行符
-    const content = event.target.innerText || event.target.textContent || ''
+    // 使用v-model后，content已自动同步，无需手动获取
     const block = blocks[index]
-    block.content = content
     editingBlockId.value = null
     
     // 如果是待办、灵感或Bug类型的块，且有内容，则同步到对应的列表
-    if (content.trim()) {
+    if (block.content.trim()) {
         if (block.type === 'todo') {
             syncBlockToTodo(block, index)
         } else if (block.type === 'idea') {
@@ -1228,15 +1241,12 @@ const handleBlockKeydown = (event, index) => {
     if (event.key === 'Escape') {
         event.preventDefault()
         
-        // 退出编辑模式
-        const target = event.target
-        const content = target.textContent || target.innerText || ''
+        // 退出编辑模式 - v-model已自动同步内容
         const block = blocks[index]
-        block.content = content
         editingBlockId.value = null
         
         // 如果是待办或灵感类型的块，且有内容，则同步到对应的列表
-        if (content.trim()) {
+        if (block.content.trim()) {
             if (block.type === 'todo') {
                 syncBlockToTodo(block, index)
             } else if (block.type === 'idea') {
@@ -2429,6 +2439,24 @@ const handleWindowResize = () => {
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
+}
+
+/* 专门为textarea优化的样式 */
+textarea.block-content.editing {
+    resize: none;
+    outline: none;
+    overflow: hidden;
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    padding: inherit;
+    margin: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .block-content.preview {
