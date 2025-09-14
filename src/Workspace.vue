@@ -215,6 +215,15 @@
                                     -{{ formatDateTime(bug.completedAt) }}
                                 </span>
                             </span>
+                            <button 
+                                class="edit-bug-btn"
+                                @click.stop="editBug(bug, index)"
+                                title="编辑Bug"
+                            >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -247,6 +256,7 @@
                     class="block-item"
                     :class="`block-${block.type}`"
                     :data-type="getBlockTypeLabel(block.type)"
+                    :data-block-id="block.id"
                 >
                     <!-- 编辑模式 -->
                     <div 
@@ -1160,12 +1170,14 @@ const handleBlockBlur = (index, blockId, event) => {
     block.content = content
     editingBlockId.value = null
     
-    // 如果是待办或灵感类型的块，且有内容，则同步到对应的列表
+    // 如果是待办、灵感或Bug类型的块，且有内容，则同步到对应的列表
     if (content.trim()) {
         if (block.type === 'todo') {
             syncBlockToTodo(block, index)
         } else if (block.type === 'idea') {
             syncBlockToIdea(block, index)
+        } else if (block.type === 'bug') {
+            syncBlockToBug(block, index)
         }
     }
 }
@@ -1250,7 +1262,7 @@ const handleBlockKeydown = (event, index) => {
             const block = blocks[index]
             const blockType = getBlockTypeLabel(block.type)
             
-            // 删除关联的待办事项或灵感（工作区 → 列表同步）
+            // 删除关联的待办事项、灵感或Bug（工作区 → 列表同步）
             if (block.type === 'todo' && block.id) {
                 const todoIndex = todos.findIndex(todo => todo.blockId === block.id)
                 if (todoIndex !== -1) {
@@ -1270,6 +1282,11 @@ const handleBlockKeydown = (event, index) => {
                 const ideaIndex = ideas.findIndex(idea => idea.blockId === block.id)
                 if (ideaIndex !== -1) {
                     ideas.splice(ideaIndex, 1)
+                }
+            } else if (block.type === 'bug' && block.id) {
+                const bugIndex = bugs.findIndex(bug => bug.blockId === block.id)
+                if (bugIndex !== -1) {
+                    bugs.splice(bugIndex, 1)
                 }
             }
             
@@ -1371,6 +1388,130 @@ const syncBlockToIdea = (block, blockIndex) => {
     }
 }
 
+// 同步块内容到Bug列表
+const syncBlockToBug = (block, blockIndex) => {
+    const lines = block.content.split('\n').filter(line => line.trim())
+    if (lines.length === 0) return
+    
+    // 第一行作为标题，去掉可能的#前缀
+    let title = lines[0].trim()
+    if (title.startsWith('#')) {
+        title = title.replace(/^#+\s*/, '').trim()
+    }
+    
+    // 第二行作为描述
+    const description = lines.length > 1 ? lines[1].trim() : ''
+    
+    // 第三行开始作为追加信息
+    const additionalInfo = lines.length > 2 ? lines.slice(2).join('\n').trim() : ''
+    
+    // 检查是否已存在相同blockId的Bug
+    const existingIndex = bugs.findIndex(bug => bug.blockId === block.id)
+    if (existingIndex !== -1) {
+        // 更新existing bug
+        const existingBug = bugs[existingIndex]
+        existingBug.title = title
+        existingBug.description = description
+        existingBug.additionalInfo = additionalInfo
+        ElMessage.success('Bug信息已更新')
+    } else {
+        // 创建新的Bug
+        const newBug = {
+            title: title,
+            description: description,
+            additionalInfo: additionalInfo,
+            fixed: false,
+            createdAt: new Date(),
+            completedAt: null,
+            blockId: block.id // 关联到原始块
+        }
+        
+        bugs.unshift(newBug)
+        ElMessage.success('已添加到Bug列表')
+    }
+}
+
+// 编辑Bug函数
+const editBug = (bug, bugIndex) => {
+    // 检查是否存在关联的工作区块
+    const associatedBlock = blocks.find(block => block.id === bug.blockId)
+    
+    if (associatedBlock) {
+        // 如果存在关联块，定位到该块
+        focusToBlock(associatedBlock.id)
+    } else {
+        // 如果不存在关联块，创建新的bug块
+        createBugBlockForBug(bug, bugIndex)
+    }
+}
+
+// 定位到指定的块
+const focusToBlock = (blockId) => {
+    // 先设置编辑状态
+    editingBlockId.value = blockId
+    
+    nextTick(() => {
+        // 使用blockRefs来获取编辑中的元素
+        const blockElement = blockRefs.get(blockId)
+        if (blockElement) {
+            // 找到对应的block数据
+            const block = blocks.find(b => b.id === blockId)
+            if (block) {
+                // 设置原始文本内容，保持换行符
+                blockElement.textContent = block.content
+            }
+            
+            blockElement.focus()
+            
+            // 设置光标到末尾
+            const range = document.createRange()
+            const selection = window.getSelection()
+            range.selectNodeContents(blockElement)
+            range.collapse(false)
+            selection.removeAllRanges()
+            selection.addRange(range)
+            
+            // 滚动到视窗
+            const blockContainer = document.querySelector(`[data-block-id="${blockId}"]`)
+            if (blockContainer) {
+                blockContainer.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+        }
+    })
+}
+
+// 为现有Bug创建关联的工作区块
+const createBugBlockForBug = (bug, bugIndex) => {
+    // 构造块内容
+    let content = bug.title
+    if (bug.description) {
+        content += '\n' + bug.description
+    }
+    if (bug.additionalInfo) {
+        content += '\n' + bug.additionalInfo
+    }
+    
+    // 创建新块
+    const newBlock = {
+        id: generateId(),
+        type: 'bug',
+        content: content,
+        isDefault: false
+    }
+    
+    // 添加到工作区
+    blocks.unshift(newBlock)
+    
+    // 更新Bug的blockId关联
+    bug.blockId = newBlock.id
+    
+    // 定位到新创建的块
+    nextTick(() => {
+        focusToBlock(newBlock.id)
+    })
+    
+    ElMessage.success('已创建关联的Bug块')
+}
 
 
 // 格式化日期
@@ -2080,8 +2221,31 @@ const handleWindowResize = () => {
 
 .bug-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
+}
+
+.edit-bug-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #909399;
+    border-radius: 2px;
+    opacity: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bug-item:hover .edit-bug-btn {
+    opacity: 1;
+}
+
+.edit-bug-btn:hover {
+    background: #f5f5f5;
+    color: #409eff;
 }
 
 .bug-dates {
