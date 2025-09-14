@@ -56,17 +56,17 @@
                 </div>
                 <div class="todo-items">
                     <div 
-                        v-for="(todo, index) in todos" 
-                        :key="index"
+                        v-for="(todo, index) in sortedTodos" 
+                        :key="todo.title + todo.createdAt"
                         class="todo-item"
                         :class="{ 'finished': todo.finished }"
                     >
                         <div class="todo-content">
-                            <div class="todo-header" @click="toggleTodoExpansion(index)">
+                            <div class="todo-header" @click="toggleTodoExpansion(todo)">
                                 <span class="todo-title">{{ todo.title }}</span>
                             </div>
                             <div 
-                                v-if="expandedTodos.has(index)" 
+                                v-if="expandedTodos.has(todo.title + todo.createdAt)" 
                                 class="todo-details"
                                 v-html="renderMarkdown(todo.content)"
                             >
@@ -119,7 +119,7 @@
                         </div>
                         <el-checkbox 
                             v-model="todo.finished" 
-                            @change="toggleTodo(index)"
+                            @change="toggleTodo(todo)"
                             @click.stop
                             class="todo-checkbox"
                         />
@@ -195,10 +195,11 @@
                         v-for="(bug, index) in sortedBugs" 
                         :key="index"
                         class="bug-item"
+                        :class="{ 'finished': bug.fixed }"
                         @click="showBugDetail(bug, index, $event)"
                     >
                         <div class="bug-header">
-                            <h4 class="bug-title" :class="{ 'completed': bug.fixed }">{{ bug.title }}</h4>
+                            <h4 class="bug-title">{{ bug.title }}</h4>
                             <el-checkbox 
                                 v-model="bug.fixed"
                                 @click.stop
@@ -208,7 +209,12 @@
                         </div>
                         <p class="bug-description">{{ bug.description }}</p>
                         <div class="bug-footer">
-                            <span class="bug-date">{{ formatDate(bug.createdAt) }}</span>
+                            <span class="bug-dates">
+                                <span class="created-date">{{ formatDateTime(bug.createdAt) }}</span>
+                                <span v-if="bug.fixed && bug.completedAt" class="completed-date">
+                                    -{{ formatDateTime(bug.completedAt) }}
+                                </span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -459,8 +465,53 @@ const todos = reactive([
         createdAt: new Date('2024-09-20'),
         completedAt: new Date('2024-11-10'),
         blockId: null
+    },
+    {
+        title: "设计系统架构",
+        content: "设计整体系统架构，包括前后端分离、微服务架构等",
+        priority: 3,
+        finished: false,
+        createdAt: new Date('2024-10-20'),
+        completedAt: null,
+        blockId: null
+    },
+    {
+        title: "测试用例编写",
+        content: "编写完整的单元测试和集成测试",
+        priority: 1,
+        finished: false,
+        createdAt: new Date('2024-10-18'),
+        completedAt: null,
+        blockId: null
+    },
+    {
+        title: "部署环境搭建",
+        content: "搭建生产环境部署流水线",
+        priority: 2,
+        finished: true,
+        createdAt: new Date('2024-10-01'),
+        completedAt: new Date('2024-10-05'),
+        blockId: null
     }
 ])
+
+// 待办事项排序计算属性：未完成在前，按优先级从高到低，时间倒序
+const sortedTodos = computed(() => {
+    return [...todos].sort((a, b) => {
+        // 首先按完成状态排序：未完成(false)在前，已完成(true)在后
+        if (a.finished !== b.finished) {
+            return a.finished - b.finished
+        }
+        
+        // 相同完成状态下按优先级排序：优先级高(3)在前，低(1)在后
+        if (a.priority !== b.priority) {
+            return b.priority - a.priority
+        }
+        
+        // 相同优先级下按创建时间倒序（较新的在前）
+        return new Date(b.createdAt) - new Date(a.createdAt)
+    })
+})
 
 // 待办事项展开状态管理
 const expandedTodos = reactive(new Set())
@@ -572,28 +623,32 @@ const bugs = reactive([
         description: "在Chrome浏览器中，登录按钮在某些分辨率下会出现样式错位问题，导致按钮文字显示不完整。",
         fixed: false,
         additionalInfo: "初步排查是CSS样式问题，可能与flexbox兼容性有关。尝试修改了z-index和position属性，问题依然存在。计划使用媒体查询进行响应式适配。",
-        createdAt: new Date('2024-01-12')
+        createdAt: new Date('2024-01-12'),
+        completedAt: null
     },
     {
         title: "数据保存失败",
         description: "用户在编辑个人信息后点击保存，偶尔会出现保存失败的情况，错误信息为网络超时。",
         fixed: false,
         additionalInfo: "问题原因：后端API响应时间过长，前端超时设置为5秒。已尝试增加超时时间到10秒，并添加重试机制。需要优化后端数据库查询性能。",
-        createdAt: new Date('2024-01-08')
+        createdAt: new Date('2024-01-08'),
+        completedAt: null
     },
     {
         title: "搜索功能异常",
         description: "在搜索框输入特殊字符时，会导致页面崩溃或返回错误的搜索结果。",
         fixed: true,
         additionalInfo: "解决方案：对用户输入进行转义处理，使用正则表达式过滤特殊字符。已在前端和后端都添加了输入验证。测试通过，问题已解决。",
-        createdAt: new Date('2024-01-15')
+        createdAt: new Date('2024-01-15'),
+        completedAt: new Date('2024-01-16')
     },
     {
         title: "移动端适配问题",
         description: "在移动设备上访问时，部分页面元素显示异常，影响用户体验。",
         fixed: true,
         additionalInfo: "通过媒体查询和响应式设计解决了大部分适配问题。已在多种设备上测试通过。",
-        createdAt: new Date('2024-01-05')
+        createdAt: new Date('2024-01-05'),
+        completedAt: new Date('2024-01-07')
     }
 ])
 
@@ -742,12 +797,17 @@ const handleGlobalClick = (event) => {
 // 切换Bug状态
 const toggleBugStatus = (index) => {
     const bug = bugs[index]
-    ElMessage.success(bug.fixed ? 'Bug已标记为修复' : 'Bug已标记为未修复')
+    if (bug.fixed) {
+        bug.completedAt = new Date()
+        ElMessage.success('Bug已标记为修复！')
+    } else {
+        bug.completedAt = null
+        ElMessage.success('Bug已标记为未修复')
+    }
 }
 
 // 切换待办事项完成状态
-const toggleTodo = (index) => {
-    const todo = todos[index]
+const toggleTodo = (todo) => {
     if (todo.finished) {
         todo.completedAt = new Date()
         ElMessage.success('任务已完成！')
@@ -774,11 +834,12 @@ const toggleTodo = (index) => {
 }
 
 // 切换待办事项详情展开状态
-const toggleTodoExpansion = (index) => {
-    if (expandedTodos.has(index)) {
-        expandedTodos.delete(index)
+const toggleTodoExpansion = (todo) => {
+    const todoKey = todo.title + todo.createdAt
+    if (expandedTodos.has(todoKey)) {
+        expandedTodos.delete(todoKey)
     } else {
-        expandedTodos.add(index)
+        expandedTodos.add(todoKey)
     }
 }
 
@@ -790,8 +851,9 @@ const toggleAllTodosExpansion = () => {
         allTodosExpanded.value = false
     } else {
         // 展开全部
-        todos.forEach((_, index) => {
-            expandedTodos.add(index)
+        todos.forEach((todo) => {
+            const todoKey = todo.title + todo.createdAt
+            expandedTodos.add(todoKey)
         })
         allTodosExpanded.value = true
     }
@@ -1975,6 +2037,12 @@ const handleWindowResize = () => {
     border-color: #d0d7de;
 }
 
+.bug-item.finished {
+    opacity: 0.6;
+    background: #f0f9ff;
+    border-color: #c7d2fe;
+}
+
 .bug-header {
     display: flex;
     justify-content: space-between;
@@ -1992,9 +2060,9 @@ const handleWindowResize = () => {
     margin-right: 8px;
 }
 
-.bug-title.completed {
+.bug-item.finished .bug-title {
     text-decoration: line-through;
-    color: #8b949e;
+    color: #656d76;
 }
 
 .bug-description {
@@ -2016,9 +2084,21 @@ const handleWindowResize = () => {
     align-items: center;
 }
 
-.bug-date {
+.bug-dates {
     font-size: 12px;
     color: #c0c4cc;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.created-date {
+    color: #c0c4cc;
+}
+
+.completed-date {
+    color: #059669;
+    font-weight: 500;
 }
 
 /* Bug详情悬浮卡片样式 */
