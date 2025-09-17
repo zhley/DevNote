@@ -251,7 +251,8 @@
                         :key="index"
                         class="note-item"
                         :class="{ 'selected': selectedNote === note }"
-                        @click="selectNote(note)"
+                        @click="selectNoteTemp(note)"
+                        @dblclick="selectNotePermanent(note)"
                     >
                         <span class="note-title">{{ note.title }}</span>
                         <span class="note-date">{{ formatDate(note.lastModified) }}</span>
@@ -324,11 +325,12 @@
             <!-- 笔记展示模式 - 类似VSCode标签页 -->
             <div v-if="isInNoteMode" class="note-viewer">
                 <!-- 标签页栏 -->
-                <div v-if="openNoteTabs.length > 0" class="note-tabs">
+                <div v-if="openNoteTabs.length > 0 || temporaryTab" class="note-tabs">
+                    <!-- 永久标签 -->
                     <div 
                         v-for="note in openNoteTabs" 
                         :key="note.title"
-                        class="note-tab"
+                        class="note-tab permanent"
                         :class="{ 'active': activeNoteTab?.title === note.title }"
                         @click="switchNoteTab(note)"
                     >
@@ -336,6 +338,25 @@
                         <button 
                             class="note-tab-close"
                             @click.stop="closeNoteTab(note)"
+                            title="关闭"
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- 临时标签 -->
+                    <div 
+                        v-if="temporaryTab"
+                        class="note-tab temporary"
+                        :class="{ 'active': activeNoteTab?.title === temporaryTab.title }"
+                        @click="switchNoteTab(temporaryTab)"
+                    >
+                        <span class="note-tab-title">{{ temporaryTab.title }}</span>
+                        <button 
+                            class="note-tab-close"
+                            @click.stop="closeTemporaryTab()"
                             title="关闭"
                         >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -361,7 +382,7 @@
                 </div>
                 
                 <!-- 没有打开笔记标签时显示空白区域 -->
-                <div v-if="openNoteTabs.length === 0" class="empty-note-area">
+                <div v-if="openNoteTabs.length === 0 && !temporaryTab" class="empty-note-area">
                     <div class="empty-note-message">
                         <p>选择一个笔记开始编辑</p>
                     </div>
@@ -477,6 +498,9 @@ const openNoteTabs = reactive([])
 // 当前激活的笔记标签
 const activeNoteTab = ref(null)
 
+// 临时标签（单击产生，双击或点击其他项会被替换）
+const temporaryTab = ref(null)
+
 // 是否在笔记模式（用户主动选择的）
 const isInNoteMode = ref(false)
 
@@ -503,19 +527,53 @@ const setActiveTab = (tab) => {
     }
 }
 
-// 选择笔记
-const selectNote = (note) => {
-    // 检查笔记是否已经在标签页中打开
+// 单击选择笔记（临时标签）
+const selectNoteTemp = (note) => {
+    // 如果已经是永久标签，直接切换
     const existingTab = openNoteTabs.find(tab => tab.title === note.title)
+    if (existingTab) {
+        activeNoteTab.value = note
+        selectedNote.value = note
+        return
+    }
     
-    if (!existingTab) {
-        // 如果没有打开，添加到标签页
-        openNoteTabs.push(note)
+    // 如果有临时标签且不是当前笔记，替换临时标签
+    if (temporaryTab.value && temporaryTab.value.title !== note.title) {
+        temporaryTab.value = note
+    } else if (!temporaryTab.value) {
+        // 创建新的临时标签
+        temporaryTab.value = note
     }
     
     // 设置为当前激活的标签
     activeNoteTab.value = note
     selectedNote.value = note
+}
+
+// 双击选择笔记（永久标签）
+const selectNotePermanent = (note) => {
+    // 如果是临时标签，转换为永久标签
+    if (temporaryTab.value && temporaryTab.value.title === note.title) {
+        temporaryTab.value = null
+        openNoteTabs.push(note)
+    } else {
+        // 检查是否已经是永久标签
+        const existingTab = openNoteTabs.find(tab => tab.title === note.title)
+        if (!existingTab) {
+            // 清除临时标签并添加永久标签
+            temporaryTab.value = null
+            openNoteTabs.push(note)
+        }
+    }
+    
+    // 设置为当前激活的标签
+    activeNoteTab.value = note
+    selectedNote.value = note
+}
+
+// 选择笔记（保留原函数用于其他地方调用）
+const selectNote = (note) => {
+    selectNotePermanent(note)
 }
 
 // 关闭笔记标签
@@ -531,6 +589,10 @@ const closeNoteTab = (note) => {
                 const newActiveIndex = index < openNoteTabs.length ? index : openNoteTabs.length - 1
                 activeNoteTab.value = openNoteTabs[newActiveIndex]
                 selectedNote.value = openNoteTabs[newActiveIndex]
+            } else if (temporaryTab.value) {
+                // 如果没有永久标签但有临时标签，切换到临时标签
+                activeNoteTab.value = temporaryTab.value
+                selectedNote.value = temporaryTab.value
             } else {
                 // 没有其他标签了，保持在笔记模式但显示空白
                 activeNoteTab.value = null
@@ -545,6 +607,24 @@ const closeNoteTab = (note) => {
 const switchNoteTab = (note) => {
     activeNoteTab.value = note
     selectedNote.value = note
+}
+
+// 关闭临时标签
+const closeTemporaryTab = () => {
+    if (temporaryTab.value) {
+        // 如果关闭的是当前激活的临时标签
+        if (activeNoteTab.value?.title === temporaryTab.value.title) {
+            // 切换到其他标签或清空
+            if (openNoteTabs.length > 0) {
+                activeNoteTab.value = openNoteTabs[0]
+                selectedNote.value = openNoteTabs[0]
+            } else {
+                activeNoteTab.value = null
+                selectedNote.value = null
+            }
+        }
+        temporaryTab.value = null
+    }
 }
 
 // 开始调整大小
@@ -2665,6 +2745,11 @@ const handleWindowResize = () => {
     overflow: hidden;
     text-overflow: ellipsis;
     margin-right: 8px;
+}
+
+/* 临时标签的斜体样式 */
+.note-tab.temporary .note-tab-title {
+    font-style: italic;
 }
 
 .note-tab-close {
