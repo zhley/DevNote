@@ -270,8 +270,8 @@
 
         <!-- 主编辑器区域 -->
         <div class="main-editor">
-            <!-- 日志模式 - 当没有选中笔记时显示 -->
-            <div v-if="!selectedNote">
+            <!-- 日志模式 - 当没有打开笔记标签时显示 -->
+            <div v-if="openNoteTabs.length === 0">
                 <div class="editor-header">
                     <div class="date-selector" @click="showDatePicker = true">
                         <span class="current-date">{{ formatCurrentDate() }}</span>
@@ -323,18 +323,43 @@
             </div>
             </div>
             
-            <!-- 笔记展示模式 - 当选中笔记时显示 -->
-            <div v-if="selectedNote" class="note-viewer">
-                <div class="note-viewer-header">
-                    <h2>{{ selectedNote.title }}</h2>
-                    <div class="note-viewer-meta">
-                        <span>创建时间：{{ formatDateTime(selectedNote.createdAt) }}</span>
-                        <span>修改时间：{{ formatDateTime(selectedNote.lastModified) }}</span>
+            <!-- 笔记展示模式 - 类似VSCode标签页 -->
+            <div v-if="openNoteTabs.length > 0" class="note-viewer">
+                <!-- 标签页栏 -->
+                <div class="note-tabs">
+                    <div 
+                        v-for="note in openNoteTabs" 
+                        :key="note.title"
+                        class="note-tab"
+                        :class="{ 'active': activeNoteTab?.title === note.title }"
+                        @click="switchNoteTab(note)"
+                    >
+                        <span class="note-tab-title">{{ note.title }}</span>
+                        <button 
+                            class="note-tab-close"
+                            @click.stop="closeNoteTab(note)"
+                            title="关闭"
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-                <div class="note-viewer-content">
-                    <!-- 这里将来会通过分页标签的方式展示笔记内容 -->
-                    <p>笔记展示区（暂未实现具体内容）</p>
+                
+                <!-- 当前激活标签的内容 -->
+                <div v-if="activeNoteTab" class="note-tab-content">
+                    <div class="note-viewer-header">
+                        <h2>{{ activeNoteTab.title }}</h2>
+                        <div class="note-viewer-meta">
+                            <span>创建时间：{{ formatDateTime(activeNoteTab.createdAt) }}</span>
+                            <span>修改时间：{{ formatDateTime(activeNoteTab.lastModified) }}</span>
+                        </div>
+                    </div>
+                    <div class="note-viewer-content">
+                        <!-- 这里将来会展示笔记内容 -->
+                        <p>笔记内容展示区（暂未实现具体内容）</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -441,6 +466,12 @@ const notes = reactive([
 // 当前选中的笔记
 const selectedNote = ref(null)
 
+// 打开的笔记标签
+const openNoteTabs = reactive([])
+
+// 当前激活的笔记标签
+const activeNoteTab = ref(null)
+
 // 日期相关状态
 const currentDate = ref(new Date())
 const showDatePicker = ref(false)
@@ -453,14 +484,62 @@ const workspaceStyle = computed(() => ({
 // 设置活动标签
 const setActiveTab = (tab) => {
     activeTab.value = tab
-    // 切换到其他标签时清除选中的笔记
-    if (tab !== 'notes') {
+    
+    if (tab === 'notes') {
+        // 点击笔记工具栏时，如果有打开的标签则显示第一个，否则选择第一个笔记
+        if (openNoteTabs.length > 0) {
+            activeNoteTab.value = openNoteTabs[0]
+            selectedNote.value = openNoteTabs[0]
+        } else if (notes.length > 0) {
+            selectNote(notes[0])
+        }
+    } else {
+        // 切换到其他标签时清除选中的笔记
         selectedNote.value = null
+        activeNoteTab.value = null
     }
 }
 
 // 选择笔记
 const selectNote = (note) => {
+    // 检查笔记是否已经在标签页中打开
+    const existingTab = openNoteTabs.find(tab => tab.title === note.title)
+    
+    if (!existingTab) {
+        // 如果没有打开，添加到标签页
+        openNoteTabs.push(note)
+    }
+    
+    // 设置为当前激活的标签
+    activeNoteTab.value = note
+    selectedNote.value = note
+}
+
+// 关闭笔记标签
+const closeNoteTab = (note) => {
+    const index = openNoteTabs.findIndex(tab => tab.title === note.title)
+    if (index !== -1) {
+        openNoteTabs.splice(index, 1)
+        
+        // 如果关闭的是当前激活的标签
+        if (activeNoteTab.value?.title === note.title) {
+            if (openNoteTabs.length > 0) {
+                // 切换到下一个标签，或者上一个标签
+                const newActiveIndex = index < openNoteTabs.length ? index : openNoteTabs.length - 1
+                activeNoteTab.value = openNoteTabs[newActiveIndex]
+                selectedNote.value = openNoteTabs[newActiveIndex]
+            } else {
+                // 没有其他标签了
+                activeNoteTab.value = null
+                selectedNote.value = null
+            }
+        }
+    }
+}
+
+// 切换笔记标签
+const switchNoteTab = (note) => {
+    activeNoteTab.value = note
     selectedNote.value = note
 }
 
@@ -2504,9 +2583,91 @@ const handleWindowResize = () => {
 
 /* 笔记展示区样式 */
 .note-viewer {
-    padding: 20px;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 笔记标签页样式 - 类似VSCode */
+.note-tabs {
+    display: flex;
+    background: #f8f8f8;
+    border-bottom: 1px solid #e1e4e8;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.note-tab {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f8f8;
+    border-right: 1px solid #e1e4e8;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    min-width: 120px;
+    max-width: 200px;
+}
+
+.note-tab:hover {
+    background: #e6f3ff;
+}
+
+.note-tab.active {
+    background: #ffffff;
+    border-bottom: 1px solid #ffffff;
+    position: relative;
+}
+
+.note-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #0969da;
+}
+
+.note-tab-title {
+    flex: 1;
+    font-size: 13px;
+    color: #24292f;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px;
+}
+
+.note-tab-close {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: all 0.15s ease;
+}
+
+.note-tab-close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.note-tab-close svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* 标签页内容区域 */
+.note-tab-content {
+    flex: 1;
     overflow-y: auto;
+    padding: 20px;
 }
 
 .note-viewer-header {
