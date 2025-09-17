@@ -274,7 +274,7 @@
                     <div 
                         v-else
                         class="block-content preview"
-                        @click="handleBlockFocus(block.id)"
+                        @click="handlePreviewClick(block.id, $event)"
                         v-html="renderMarkdown(block.content)"
                     ></div>
                 </div>
@@ -335,6 +335,7 @@ import { ref, reactive, nextTick, computed } from 'vue'
 import { Delete, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
+import { open } from '@tauri-apps/api/shell'
 
 // 创建Markdown解析器
 const md = new MarkdownIt({
@@ -451,6 +452,34 @@ const setBlockRef = (el, blockId) => {
 // 渲染Markdown内容
 const renderMarkdown = (content) => {
     return md.render(content)
+}
+
+// 处理markdown中的链接点击事件
+const handleLinkClick = (event) => {
+    // 检查是否点击的是链接
+    if (event.target.tagName === 'A' && event.target.href) {
+        event.preventDefault() // 阻止默认行为
+        
+        const url = event.target.href
+        
+        // 使用Tauri API在系统默认浏览器中打开链接
+        open(url).catch((error) => {
+            console.error('Failed to open link:', error)
+            ElMessage.error('无法打开链接')
+        })
+    }
+}
+
+// 处理预览区域点击事件
+const handlePreviewClick = (blockId, event) => {
+    // 如果点击的是链接，先处理链接点击
+    if (event.target.tagName === 'A' && event.target.href) {
+        handleLinkClick(event)
+        return // 不执行后续的聚焦逻辑
+    }
+    
+    // 否则正常处理block聚焦
+    handleBlockFocus(blockId)
 }
 
 // 判断区域是否正在编辑
