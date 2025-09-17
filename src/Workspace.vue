@@ -2623,7 +2623,7 @@ textarea.block-content.editing {
     border-spacing: 0;
     width: 100%;
     margin: 8px 0;
-    display: block;
+    display: table; /* 修复：使用table而不是block */
     overflow: auto;
     font-size: 0.85em;
 }
@@ -2643,6 +2643,7 @@ textarea.block-content.editing {
 .block-content :deep(tr) {
     background: #ffffff;
     border-top: 1px solid #d0d7de;
+    display: table-row; /* 确保行正确显示 */
 }
 
 .block-content :deep(tr:nth-child(2n)) {
@@ -2654,6 +2655,7 @@ textarea.block-content.editing {
     border: 1px solid #d0d7de;
     padding: 4px 8px;
     text-align: left;
+    display: table-cell; /* 确保单元格正确显示 */
 }
 
 .block-content :deep(th) {
