@@ -32,6 +32,16 @@
                     <path d="M14 12h-4v-2h4m6 7h-2v-2h2m0-4h-2V9.5h2m-2-1V8c0-.6-.4-1-1-1h-1V5c0-.6-.4-1-1-1H9c-.6 0-1 .4-1 1v2H7c-.6 0-1 .4-1 1v.5H4v2h2V13H4v2h2v2c0 .6.4 1 1 1h1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1v-2h1c.6 0 1-.4 1-1v-2z"/>
                 </svg>
             </div>
+            <div 
+                class="toolbar-item"
+                :class="{ active: activeTab === 'notes' }"
+                @click="setActiveTab('notes')"
+                title="笔记"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+            </div>
         </div>
 
         <!-- 左侧内容区域 -->
@@ -229,6 +239,27 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 笔记列表区域 -->
+            <div v-if="activeTab === 'notes'" class="notes-list">
+                <div class="section-header">
+                    <h3>笔记</h3>
+                </div>
+                <div class="note-items">
+                    <div 
+                        v-for="(note, index) in notes" 
+                        :key="index"
+                        class="note-item"
+                        :class="{ 'selected': selectedNote === note }"
+                        @click="selectNote(note)"
+                    >
+                        <div class="note-title">{{ note.title }}</div>
+                        <div class="note-meta">
+                            <span class="note-date">{{ formatDate(note.lastModified) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 分隔线 -->
@@ -239,18 +270,19 @@
 
         <!-- 主编辑器区域 -->
         <div class="main-editor">
-            <div class="editor-header">
-                <div class="date-selector" @click="showDatePicker = true">
-                    <span class="current-date">{{ formatCurrentDate() }}</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="calendar-icon">
-                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.89-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-                    </svg>
+            <!-- 日志模式 - 当没有选中笔记时显示 -->
+            <div v-if="!selectedNote">
+                <div class="editor-header">
+                    <div class="date-selector" @click="showDatePicker = true">
+                        <span class="current-date">{{ formatCurrentDate() }}</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="calendar-icon">
+                            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.89-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                        </svg>
+                    </div>
                 </div>
-
-            </div>
-            
-            <!-- 可编辑区域列表 -->
-            <div class="blocks-container">
+                
+                <!-- 可编辑区域列表 -->
+                <div class="blocks-container">
                 <div 
                     v-for="(block, index) in blocks" 
                     :key="block.id"
@@ -287,6 +319,22 @@
                         @keydown.enter="handleCommand"
                         clearable
                     />
+                </div>
+            </div>
+            </div>
+            
+            <!-- 笔记展示模式 - 当选中笔记时显示 -->
+            <div v-if="selectedNote" class="note-viewer">
+                <div class="note-viewer-header">
+                    <h2>{{ selectedNote.title }}</h2>
+                    <div class="note-viewer-meta">
+                        <span>创建时间：{{ formatDateTime(selectedNote.createdAt) }}</span>
+                        <span>修改时间：{{ formatDateTime(selectedNote.lastModified) }}</span>
+                    </div>
+                </div>
+                <div class="note-viewer-content">
+                    <!-- 这里将来会通过分页标签的方式展示笔记内容 -->
+                    <p>笔记展示区（暂未实现具体内容）</p>
                 </div>
             </div>
         </div>
@@ -368,6 +416,31 @@ const startLeftWidth = ref(0)
 // 侧边栏状态
 const activeTab = ref('todo')
 
+// 笔记数据 - 假数据
+const notes = reactive([
+    {
+        title: "Vue 3 学习笔记",
+        content: "# Vue 3 学习笔记\n\n这是一篇关于Vue 3的学习笔记...",
+        createdAt: new Date('2024-01-15'),
+        lastModified: new Date('2024-01-20')
+    },
+    {
+        title: "JavaScript 异步编程",
+        content: "# JavaScript 异步编程\n\n异步编程是JavaScript的重要特性...",
+        createdAt: new Date('2024-01-10'),
+        lastModified: new Date('2024-01-18')
+    },
+    {
+        title: "项目架构设计",
+        content: "# 项目架构设计\n\n良好的项目架构是成功的关键...",
+        createdAt: new Date('2024-01-05'),
+        lastModified: new Date('2024-01-16')
+    }
+])
+
+// 当前选中的笔记
+const selectedNote = ref(null)
+
 // 日期相关状态
 const currentDate = ref(new Date())
 const showDatePicker = ref(false)
@@ -380,6 +453,15 @@ const workspaceStyle = computed(() => ({
 // 设置活动标签
 const setActiveTab = (tab) => {
     activeTab.value = tab
+    // 切换到其他标签时清除选中的笔记
+    if (tab !== 'notes') {
+        selectedNote.value = null
+    }
+}
+
+// 选择笔记
+const selectNote = (note) => {
+    selectedNote.value = note
 }
 
 // 开始调整大小
@@ -2367,6 +2449,90 @@ const handleWindowResize = () => {
     border-top: 1px solid #e1e4e8;
     padding-top: 8px;
     margin-top: 8px;
+}
+
+/* 笔记列表样式 */
+.notes-list {
+    background: #ffffff;
+    padding: 16px 16px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.note-items {
+    flex: 1;
+    overflow-y: auto;
+    margin-right: -16px;
+    padding-right: 16px;
+}
+
+.note-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    font-size: 13px;
+    background: #ffffff;
+    cursor: pointer;
+}
+
+.note-item:hover {
+    background-color: #f6f8fa;
+    border-color: #d0d7de;
+}
+
+.note-item.selected {
+    background-color: #e6f3ff;
+    border-color: #0969da;
+}
+
+.note-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #24292f;
+    margin-bottom: 4px;
+}
+
+.note-meta {
+    font-size: 12px;
+    color: #656d76;
+}
+
+/* 笔记展示区样式 */
+.note-viewer {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.note-viewer-header {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e1e4e8;
+    padding-bottom: 16px;
+}
+
+.note-viewer-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #24292f;
+}
+
+.note-viewer-meta {
+    font-size: 12px;
+    color: #656d76;
+    display: flex;
+    gap: 16px;
+}
+
+.note-viewer-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #24292f;
 }
 
 /* 主编辑器样式 */
