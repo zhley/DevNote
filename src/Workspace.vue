@@ -271,7 +271,7 @@
         <!-- 主编辑器区域 -->
         <div class="main-editor">
             <!-- 日志模式 - 当不在笔记模式时显示 -->
-            <div v-if="!isInNoteMode">
+            <div v-if="!isInNoteMode" class="log-editor">
                 <div class="editor-header">
                     <div class="date-selector" @click="showDatePicker = true">
                         <span class="current-date">{{ formatCurrentDate() }}</span>
@@ -1914,12 +1914,15 @@ const handleWindowResize = () => {
 
 .main-editor {
     background: #ffffff;
-    padding: 16px 16px 16px 16px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     box-sizing: border-box;
     flex: 1; /* 自动占据剩余空间 */
+}
+
+.log-editor{
+    padding: 16px 16px 16px 16px;
 }
 
 /* 区域头部样式 */
