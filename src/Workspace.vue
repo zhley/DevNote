@@ -35,7 +35,7 @@
         </div>
 
         <!-- 左侧内容区域 -->
-        <div class="sidebar-content" :style="{ width: leftWidth + 'px' }">
+        <div class="sidebar-content">
             <!-- 待办清单区域 -->
             <div v-if="activeTab === 'todo'" class="todo-list">
                 <div class="section-header">
@@ -237,7 +237,7 @@
         ></div>
 
         <!-- 主编辑器区域 -->
-        <div class="main-editor" :style="{ width: centerWidth + 'px' }">
+        <div class="main-editor">
             <div class="editor-header">
                 <div class="date-selector" @click="showDatePicker = true">
                     <span class="current-date">{{ formatCurrentDate() }}</span>
@@ -371,15 +371,9 @@ const activeTab = ref('todo')
 const currentDate = ref(new Date())
 const showDatePicker = ref(false)
 
-// 计算中间区域宽度
-const centerWidth = computed(() => {
-    const totalWidth = window.innerWidth || 1200
-    return totalWidth - 48 - leftWidth.value - 1 // 48px toolbar + 1px resizer
-})
-
 // 计算workspace样式
 const workspaceStyle = computed(() => ({
-    gridTemplateColumns: `48px ${leftWidth.value}px 1px 1fr`
+    '--left-width': `${leftWidth.value}px`
 }))
 
 // 设置活动标签
@@ -1611,11 +1605,10 @@ const handleWindowResize = () => {
 
 <style scoped>
 .workspace {
-    display: grid;
-    grid-template-columns: 48px 280px 1px 1fr;
+    display: flex;
+    flex-direction: row;
     height: 100vh;
     width: 100vw;
-    gap: 0;
     padding: 0;
     margin: 0;
     background: #f8f9fa;
@@ -1639,6 +1632,7 @@ const handleWindowResize = () => {
     box-sizing: border-box;
     position: relative;
     overflow: visible;
+    flex-shrink: 0; /* 防止收缩 */
 }
 
 .toolbar-item {
@@ -1684,6 +1678,8 @@ const handleWindowResize = () => {
     flex-direction: column;
     overflow: hidden;
     box-sizing: border-box;
+    width: var(--left-width);
+    flex-shrink: 0; /* 防止收缩 */
 }
 
 /* 分隔线样式 */
@@ -1694,6 +1690,7 @@ const handleWindowResize = () => {
     position: relative;
     transition: background-color 0.15s ease;
     z-index: 10;
+    flex-shrink: 0; /* 防止收缩 */
 }
 
 .resizer:hover {
@@ -1747,6 +1744,7 @@ const handleWindowResize = () => {
     flex-direction: column;
     overflow: hidden;
     box-sizing: border-box;
+    flex: 1; /* 自动占据剩余空间 */
 }
 
 /* 区域头部样式 */
@@ -2800,50 +2798,7 @@ textarea.block-content.editing {
 /* 响应式设计 - 简化桌面应用版本 */
 @media (max-width: 1024px) {
     .workspace {
-        grid-template-columns: 48px 240px 1px 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .workspace {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-        height: 100vh;
-    }
-    
-    .sidebar-toolbar {
-        width: 100%;
-        height: 48px;
-        flex-direction: row;
-        justify-content: center;
-        padding: 4px 0;
-    }
-    
-    .toolbar-item {
-        margin-bottom: 0;
-        margin-right: 4px;
-    }
-    
-    .toolbar-item.active::before {
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: auto;
-        width: auto;
-        height: 2px;
-        border-radius: 0 0 1px 1px;
-    }
-    
-    .sidebar-content {
-        width: 100% !important;
-    }
-    
-    .resizer {
-        display: none;
-    }
-    
-    .main-editor {
-        width: 100% !important;
+        --left-width: 240px;
     }
 }
 
