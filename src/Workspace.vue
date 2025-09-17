@@ -270,8 +270,8 @@
 
         <!-- 主编辑器区域 -->
         <div class="main-editor">
-            <!-- 日志模式 - 当没有打开笔记标签时显示 -->
-            <div v-if="openNoteTabs.length === 0">
+            <!-- 日志模式 - 当不在笔记模式时显示 -->
+            <div v-if="!isInNoteMode">
                 <div class="editor-header">
                     <div class="date-selector" @click="showDatePicker = true">
                         <span class="current-date">{{ formatCurrentDate() }}</span>
@@ -324,9 +324,9 @@
             </div>
             
             <!-- 笔记展示模式 - 类似VSCode标签页 -->
-            <div v-if="openNoteTabs.length > 0" class="note-viewer">
+            <div v-if="isInNoteMode" class="note-viewer">
                 <!-- 标签页栏 -->
-                <div class="note-tabs">
+                <div v-if="openNoteTabs.length > 0" class="note-tabs">
                     <div 
                         v-for="note in openNoteTabs" 
                         :key="note.title"
@@ -359,6 +359,13 @@
                     <div class="note-viewer-content">
                         <!-- 这里将来会展示笔记内容 -->
                         <p>笔记内容展示区（暂未实现具体内容）</p>
+                    </div>
+                </div>
+                
+                <!-- 没有打开笔记标签时显示空白区域 -->
+                <div v-if="openNoteTabs.length === 0" class="empty-note-area">
+                    <div class="empty-note-message">
+                        <p>选择一个笔记开始编辑</p>
                     </div>
                 </div>
             </div>
@@ -472,6 +479,9 @@ const openNoteTabs = reactive([])
 // 当前激活的笔记标签
 const activeNoteTab = ref(null)
 
+// 是否在笔记模式（用户主动选择的）
+const isInNoteMode = ref(false)
+
 // 日期相关状态
 const currentDate = ref(new Date())
 const showDatePicker = ref(false)
@@ -486,7 +496,8 @@ const setActiveTab = (tab) => {
     activeTab.value = tab
     
     if (tab === 'notes') {
-        // 点击笔记工具栏时，如果有打开的标签则显示第一个，否则选择第一个笔记
+        // 点击笔记工具栏时，进入笔记模式
+        isInNoteMode.value = true
         if (openNoteTabs.length > 0) {
             activeNoteTab.value = openNoteTabs[0]
             selectedNote.value = openNoteTabs[0]
@@ -494,7 +505,8 @@ const setActiveTab = (tab) => {
             selectNote(notes[0])
         }
     } else {
-        // 切换到其他标签时清除选中的笔记
+        // 点击其他工具栏项时，退出笔记模式，进入日志模式
+        isInNoteMode.value = false
         selectedNote.value = null
         activeNoteTab.value = null
     }
@@ -529,9 +541,10 @@ const closeNoteTab = (note) => {
                 activeNoteTab.value = openNoteTabs[newActiveIndex]
                 selectedNote.value = openNoteTabs[newActiveIndex]
             } else {
-                // 没有其他标签了
+                // 没有其他标签了，保持在笔记模式但显示空白
                 activeNoteTab.value = null
                 selectedNote.value = null
+                // 不修改 isInNoteMode，保持在笔记模式
             }
         }
     }
@@ -2624,7 +2637,7 @@ const handleWindowResize = () => {
 .note-tab.active::after {
     content: '';
     position: absolute;
-    bottom: -1px;
+    top: 0;
     left: 0;
     right: 0;
     height: 2px;
@@ -3158,6 +3171,24 @@ textarea.block-content.editing {
 
 :deep(.el-checkbox) {
     font-size: 13px;
+}
+
+/* 空白笔记区域样式 */
+.empty-note-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    color: #656d76;
+    background: #ffffff;
+}
+
+.empty-note-message p {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.7;
 }
 
 </style>
