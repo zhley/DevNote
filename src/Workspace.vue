@@ -253,10 +253,8 @@
                         :class="{ 'selected': selectedNote === note }"
                         @click="selectNote(note)"
                     >
-                        <div class="note-title">{{ note.title }}</div>
-                        <div class="note-meta">
-                            <span class="note-date">{{ formatDate(note.lastModified) }}</span>
-                        </div>
+                        <span class="note-title">{{ note.title }}</span>
+                        <span class="note-date">{{ formatDate(note.lastModified) }}</span>
                     </div>
                 </div>
             </div>
@@ -2558,31 +2556,51 @@ const handleWindowResize = () => {
 }
 
 .note-item {
-    padding: 12px;
-    margin-bottom: 8px;
-    border: 1px solid #e1e4e8;
-    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
     transition: all 0.15s ease;
     font-size: 13px;
     background: #ffffff;
     cursor: pointer;
+    border-radius: 2px;
 }
 
 .note-item:hover {
-    background-color: #f6f8fa;
-    border-color: #d0d7de;
+    background-color: #f1f3f4;
 }
 
 .note-item.selected {
-    background-color: #e6f3ff;
-    border-color: #0969da;
+    background-color: #e3f2fd;
+    color: #1976d2;
 }
 
 .note-title {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 400;
     color: #24292f;
-    margin-bottom: 4px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 8px;
+}
+
+.note-item.selected .note-title {
+    color: #1976d2;
+}
+
+.note-date {
+    font-size: 12px;
+    color: #8e8e93;
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+.note-item.selected .note-date {
+    color: #1976d2;
+    opacity: 0.7;
 }
 
 .note-meta {
