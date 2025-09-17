@@ -1108,33 +1108,15 @@ const createBlock = async (type, title = '', priority = 2) => {
     setTimeout(() => {
         const blockElement = blockRefs.get(newBlock.id)
         if (blockElement) {
-            // 如果有标题，设置内容并将光标放到末尾
-            if (title) {
-                blockElement.textContent = content
-                blockElement.focus()
-                
-                // 设置光标到末尾
-                const range = document.createRange()
-                const selection = window.getSelection()
-                range.selectNodeContents(blockElement)
-                range.collapse(false) // 折叠到末尾
-                selection.removeAllRanges()
-                selection.addRange(range)
-            } else {
-                // 没有标题时，确保内容为空并聚焦
-                blockElement.textContent = ''
-                blockElement.focus()
-                
-                // 设置光标到开始位置
-                const range = document.createRange()
-                const selection = window.getSelection()
-                range.setStart(blockElement, 0)
-                range.setEnd(blockElement, 0)
-                selection.removeAllRanges()
-                selection.addRange(range)
+            blockElement.focus()
+            
+            // 如果有标题，将光标放到内容末尾
+            if (title && blockElement.tagName === 'TEXTAREA') {
+                const textLength = blockElement.value.length
+                blockElement.setSelectionRange(textLength, textLength)
             }
         }
-    }, 10)
+    }, 100)
     
     // 构建提示消息
     let message = `${getBlockTypeLabel(type)}区域已创建`
@@ -1255,21 +1237,19 @@ const handleBlockKeydown = (event, index) => {
         }
         
         // 移除焦点
-        target.blur()
+        event.target.blur()
         return
     }
     
     // 检查是否按下了退格键或删除键
     if (event.key === 'Backspace' || event.key === 'Delete') {
-        const target = event.target
-        const content = target.textContent || target.innerText || ''
+        const block = blocks[index]
         
-        // 如果内容为空，删除这个block
-        if (content.trim() === '') {
+        // 只有在内容为空时才删除block
+        if (block.content.trim() === '') {
             event.preventDefault()
             
             // 获取block信息用于提示
-            const block = blocks[index]
             const blockType = getBlockTypeLabel(block.type)
             
             // 删除关联的待办事项、灵感或Bug（工作区 → 列表同步）
