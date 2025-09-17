@@ -46,6 +46,7 @@
                             text 
                             @click="toggleAllTodosExpansion"
                             :title="allTodosExpanded ? '折叠所有详情' : '展开所有详情'"
+                            style="width: 20px; height: 18px;"
                         >
                             <el-icon>
                                 <MoreFilled v-if="!allTodosExpanded" />
