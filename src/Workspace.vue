@@ -498,17 +498,10 @@ const setActiveTab = (tab) => {
     if (tab === 'notes') {
         // 点击笔记工具栏时，进入笔记模式
         isInNoteMode.value = true
-        if (openNoteTabs.length > 0) {
-            activeNoteTab.value = openNoteTabs[0]
-            selectedNote.value = openNoteTabs[0]
-        } else if (notes.length > 0) {
-            selectNote(notes[0])
-        }
+        // 不自动选择任何笔记，让用户手动选择
     } else {
         // 点击其他工具栏项时，退出笔记模式，进入日志模式
         isInNoteMode.value = false
-        selectedNote.value = null
-        activeNoteTab.value = null
     }
 }
 
