@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import Workspace from "./Workspace.vue";
+import Workspace from "./components/Workspace.vue";
 </script>
 
 <style scoped>
