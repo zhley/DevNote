@@ -652,7 +652,6 @@ const closeTemporaryTab = () => {
 
 // 处理笔记内容变化
 const handleNoteContentSave = (value, render) => {
-    console.log(notes)
     if (activeNoteTab.value) {
         // 更新当前活动标签的内容
         activeNoteTab.value.content = value
