@@ -368,13 +368,6 @@
                 
                 <!-- 当前激活标签的内容 -->
                 <div v-if="activeNoteTab" class="note-tab-content">
-                    <div class="note-viewer-header">
-                        <h2>{{ activeNoteTab.title }}</h2>
-                        <div class="note-viewer-meta">
-                            <span>创建时间：{{ formatDateTime(activeNoteTab.createdAt) }}</span>
-                            <span>修改时间：{{ formatDateTime(activeNoteTab.lastModified) }}</span>
-                        </div>
-                    </div>
                     <div class="note-viewer-content">
                         <!-- mavon-editor 编辑器 -->
                         <mavon-editor
@@ -386,6 +379,16 @@
                             @save="handleNoteContentSave"
                             class="mavon-editor-wrapper"
                         />
+                    </div>
+                    <!-- 底部信息栏 -->
+                    <div class="note-bottom-info">
+                        <div class="note-info-content">
+                            <span class="note-title">{{ activeNoteTab.title }}</span>
+                            <div class="note-meta">
+                                <span>创建：{{ formatDateTime(activeNoteTab.createdAt) }}</span>
+                                <span>修改：{{ formatDateTime(activeNoteTab.lastModified) }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -2831,28 +2834,8 @@ const handleWindowResize = () => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    padding: 20px;
-}
-
-.note-viewer-header {
-    margin-bottom: 20px;
-    border-bottom: 1px solid #e1e4e8;
-    padding-bottom: 16px;
-}
-
-.note-viewer-header h2 {
-    margin: 0 0 8px 0;
-    font-size: 24px;
-    font-weight: 600;
-    color: #24292f;
-}
-
-.note-viewer-meta {
-    font-size: 12px;
-    color: #656d76;
-    display: flex;
-    gap: 16px;
+    overflow: hidden;
+    position: relative;
 }
 
 .note-viewer-content {
@@ -2863,6 +2846,42 @@ const handleWindowResize = () => {
     font-size: 14px;
     line-height: 1.6;
     color: #24292f;
+}
+
+/* 底部信息栏样式 */
+.note-bottom-info {
+    flex-shrink: 0;
+    background: #f8f9fa;
+    border-top: 1px solid #e1e4e8;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.note-info-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+}
+
+.note-title {
+    font-weight: 600;
+    color: #24292f;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.note-meta {
+    display: flex;
+    gap: 12px;
+    color: #656d76;
+}
+
+.note-meta span {
+    white-space: nowrap;
 }
 
 /* mavon-editor 样式自定义 */
