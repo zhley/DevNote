@@ -12,7 +12,7 @@
             <div class="menu-item" @click="toggleDropdown('view')" :class="{ active: activeDropdown === 'view' }">
                 <span>视图</span>
                 <div v-if="activeDropdown === 'view'" class="dropdown-menu">
-                    <div class="dropdown-item">切换侧边栏</div>
+                    <div class="dropdown-item">侧边栏</div>
                 </div>
             </div>
             
@@ -22,6 +22,14 @@
                 <div v-if="activeDropdown === 'settings'" class="dropdown-menu">
                     <div class="dropdown-item">首选项</div>
                     <div class="dropdown-item">主题</div>
+                </div>
+            </div>
+
+            <div class="menu-item" @click="toggleDropdown('help')" :class="{ active: activeDropdown === 'help' }">
+                <span>帮助</span>
+                <div v-if="activeDropdown === 'help'" class="dropdown-menu">
+                    <div class="dropdown-item">检查更新</div>
+                    <div class="dropdown-item">关于</div>
                 </div>
             </div>
         </div>
