@@ -1,35 +1,18 @@
 <template>
     <div class="menu-bar">
         <div class="menu-items">
-            <!-- 文件菜单 -->
+            <!-- 项目菜单 -->
             <div class="menu-item" @click="toggleDropdown('file')" :class="{ active: activeDropdown === 'file' }">
-                <span>文件</span>
+                <span>项目</span>
                 <div v-if="activeDropdown === 'file'" class="dropdown-menu">
-                    <div class="dropdown-item">新建笔记</div>
-                    <div class="dropdown-item">打开文件夹</div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-item">退出</div>
                 </div>
             </div>
             
-            <!-- 编辑菜单 -->
-            <div class="menu-item" @click="toggleDropdown('edit')" :class="{ active: activeDropdown === 'edit' }">
-                <span>编辑</span>
-                <div v-if="activeDropdown === 'edit'" class="dropdown-menu">
-                    <div class="dropdown-item">撤销</div>
-                    <div class="dropdown-item">重做</div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-item">复制</div>
-                    <div class="dropdown-item">粘贴</div>
-                </div>
-            </div>
-            
-            <!-- 查看菜单 -->
+            <!-- 视图菜单 -->
             <div class="menu-item" @click="toggleDropdown('view')" :class="{ active: activeDropdown === 'view' }">
-                <span>查看</span>
+                <span>视图</span>
                 <div v-if="activeDropdown === 'view'" class="dropdown-menu">
                     <div class="dropdown-item">切换侧边栏</div>
-                    <div class="dropdown-item">切换预览</div>
                 </div>
             </div>
             
@@ -81,7 +64,7 @@ onUnmounted(() => {
 .menu-bar {
     background: #ffffff;
     border-bottom: 1px solid #e1e1e1;
-    height: 30px;
+    height: 24px;
     display: flex;
     align-items: center;
     font-size: 13px;
@@ -98,7 +81,7 @@ onUnmounted(() => {
 
 .menu-item {
     position: relative;
-    padding: 0 12px;
+    padding: 0 10px;
     height: 100%;
     display: flex;
     align-items: center;
@@ -130,7 +113,7 @@ onUnmounted(() => {
 }
 
 .dropdown-item {
-    padding: 6px 16px;
+    padding: 5px 14px;
     color: #333;
     cursor: pointer;
     font-size: 13px;
