@@ -5,6 +5,10 @@
             <div class="menu-item" @click="toggleDropdown('file')" :class="{ active: activeDropdown === 'file' }">
                 <span>项目</span>
                 <div v-if="activeDropdown === 'file'" class="dropdown-menu">
+                    <div class="dropdown-item">新建项目文件</div>
+                    <div class="dropdown-item">打开项目文件</div>
+                    <div class="dropdown-item">导出</div>
+                    <div class="dropdown-item">属性</div>
                 </div>
             </div>
             
@@ -20,7 +24,6 @@
             <div class="menu-item" @click="toggleDropdown('settings')" :class="{ active: activeDropdown === 'settings' }">
                 <span>设置</span>
                 <div v-if="activeDropdown === 'settings'" class="dropdown-menu">
-                    <div class="dropdown-item">首选项</div>
                     <div class="dropdown-item">主题</div>
                 </div>
             </div>
