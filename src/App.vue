@@ -1,17 +1,13 @@
 <template>
     <div class="app-container">
         <MenuBar />
-        <div class="main-content">
-            <Workspace />
-        </div>
-        <StatusBar />
+        <Workspace class="main-content"/>
     </div>
 </template>
 
 <script setup lang="ts">
 import Workspace from "./components/Workspace.vue";
 import MenuBar from "./components/MenuBar.vue";
-import StatusBar from "./components/StatusBar.vue";
 </script>
 
 <style scoped>
