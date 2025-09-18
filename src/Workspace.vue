@@ -376,8 +376,16 @@
                         </div>
                     </div>
                     <div class="note-viewer-content">
-                        <!-- 这里将来会展示笔记内容 -->
-                        <p>笔记内容展示区（暂未实现具体内容）</p>
+                        <!-- mavon-editor 编辑器 -->
+                        <mavon-editor
+                            v-model="activeNoteTab.content"
+                            :toolbars="editorToolbars"
+                            :ishljs="true"
+                            language="zh-CN"
+                            placeholder="开始编写你的笔记..."
+                            @change="handleNoteContentChange"
+                            class="mavon-editor-wrapper"
+                        />
                     </div>
                 </div>
                 
@@ -436,6 +444,13 @@ import { Delete, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
 import { open } from '@tauri-apps/api/shell'
+import { mavonEditor } from 'mavon-editor'
+import 'mavon-editor/dist/css/index.css'
+
+// 注册mavon-editor组件
+const components = {
+    mavonEditor
+}
 
 // 创建Markdown解析器
 const md = new MarkdownIt({
@@ -500,6 +515,42 @@ const activeNoteTab = ref(null)
 
 // 临时标签（单击产生，双击或点击其他项会被替换）
 const temporaryTab = ref(null)
+
+// mavon-editor 工具栏配置
+const editorToolbars = {
+    bold: true, // 粗体
+    italic: true, // 斜体
+    underline: true, // 下划线
+    strikethrough: true, // 中划线
+    mark: true, // 标记
+    superscript: true, // 上角标
+    subscript: true, // 下角标
+    quote: true, // 引用
+    ol: true, // 有序列表
+    ul: true, // 无序列表
+    link: true, // 链接
+    imagelink: true, // 图片链接
+    code: true, // code
+    table: true, // 表格
+    fullscreen: false, // 全屏编辑
+    readmodel: false, // 沉浸式阅读
+    htmlcode: false, // 展示html源码
+    help: false, // 帮助
+    /* 1.3.5 */
+    undo: true, // 上一步
+    redo: true, // 下一步
+    trash: true, // 清空
+    save: false, // 保存（触发events中的save事件）
+    /* 1.4.2 */
+    navigation: true, // 导航目录
+    /* 2.1.8 */
+    alignleft: true, // 左对齐
+    aligncenter: true, // 居中
+    alignright: true, // 右对齐
+    /* 2.2.1 */
+    subfield: true, // 单双栏模式
+    preview: true, // 预览
+}
 
 // 是否在笔记模式（用户主动选择的）
 const isInNoteMode = ref(false)
@@ -624,6 +675,28 @@ const closeTemporaryTab = () => {
             }
         }
         temporaryTab.value = null
+    }
+}
+
+// 处理笔记内容变化
+const handleNoteContentChange = (value, render) => {
+    if (activeNoteTab.value) {
+        // 更新当前活动标签的内容
+        activeNoteTab.value.content = value
+        activeNoteTab.value.lastModified = new Date()
+        
+        // 同步更新到notes数组中
+        const noteInArray = notes.find(note => note.title === activeNoteTab.value.title)
+        if (noteInArray) {
+            noteInArray.content = value
+            noteInArray.lastModified = new Date()
+        }
+        
+        // 同步更新到临时标签中（如果当前是临时标签）
+        if (temporaryTab.value && temporaryTab.value.title === activeNoteTab.value.title) {
+            temporaryTab.value.content = value
+            temporaryTab.value.lastModified = new Date()
+        }
     }
 }
 
@@ -2803,9 +2876,48 @@ const handleWindowResize = () => {
 }
 
 .note-viewer-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     font-size: 14px;
     line-height: 1.6;
     color: #24292f;
+}
+
+/* mavon-editor 样式自定义 */
+.mavon-editor-wrapper {
+    flex: 1;
+    min-height: 0;
+}
+
+:deep(.v-note-wrapper) {
+    height: 100%;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+:deep(.v-note-wrapper .v-note-panel) {
+    height: 100%;
+}
+
+:deep(.v-note-wrapper .v-note-edit) {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+:deep(.v-note-wrapper .v-note-show) {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* 工具栏样式优化 */
+:deep(.v-note-wrapper .v-note-op) {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e4e8;
 }
 
 /* 主编辑器样式 */
