@@ -376,19 +376,10 @@
                             :ishljs="true"
                             language="zh-CN"
                             placeholder="开始编写你的笔记..."
+                            fontSize="16px"
                             @save="handleNoteContentSave"
                             class="mavon-editor-wrapper"
                         />
-                    </div>
-                    <!-- 底部信息栏 -->
-                    <div class="note-bottom-info">
-                        <div class="note-info-content">
-                            <span class="note-title">{{ activeNoteTab.title }}</span>
-                            <div class="note-meta">
-                                <span>创建：{{ formatDateTime(activeNoteTab.createdAt) }}</span>
-                                <span>修改：{{ formatDateTime(activeNoteTab.lastModified) }}</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
@@ -661,6 +652,7 @@ const closeTemporaryTab = () => {
 
 // 处理笔记内容变化
 const handleNoteContentSave = (value, render) => {
+    console.log(notes)
     if (activeNoteTab.value) {
         // 更新当前活动标签的内容
         activeNoteTab.value.content = value
@@ -2843,45 +2835,7 @@ const handleWindowResize = () => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    font-size: 14px;
-    line-height: 1.6;
     color: #24292f;
-}
-
-/* 底部信息栏样式 */
-.note-bottom-info {
-    flex-shrink: 0;
-    background: #f8f9fa;
-    border-top: 1px solid #e1e4e8;
-    padding: 8px 12px;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.note-info-content {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    font-size: 12px;
-}
-
-.note-title {
-    font-weight: 600;
-    color: #24292f;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.note-meta {
-    display: flex;
-    gap: 12px;
-    color: #656d76;
-}
-
-.note-meta span {
-    white-space: nowrap;
 }
 
 /* mavon-editor 样式自定义 */
