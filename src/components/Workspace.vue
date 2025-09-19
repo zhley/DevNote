@@ -2175,6 +2175,10 @@ const handleWindowResize = () => {
 
 .log-editor{
     padding: 16px 16px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 /* 区域头部样式 */
