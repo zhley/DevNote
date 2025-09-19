@@ -537,8 +537,29 @@ const notes = reactive([
     }
 ])
 
-// 项目进度数据
-const progresses = reactive([])
+// 项目进度数据（从数据库中查出来的所有项目进度信息）
+const progresses = reactive([
+    // 模拟历史进度数据
+    {
+        date: new Date('2024-01-19'),
+        content: [
+            '搭建基础项目架构',
+            '配置开发环境',
+            '设计数据库结构'
+        ]
+    },
+    {
+        date: new Date('2024-01-18'), 
+        content: [
+            '进行需求分析',
+            '制定项目计划',
+            '确定技术栈选型'
+        ]
+    }
+])
+
+// 今日进度指针（指向progresses中今天的进度那一项）
+const todayProgress = ref(null)
 
 // 当前选中的笔记
 const selectedNote = ref(null)
@@ -1053,111 +1074,47 @@ const sortedProgresses = computed(() => {
     })
 })
 
-// 解析项目进度数据的函数
-const parseProgressBlocks = () => {
-    // 清空现有数据
-    progresses.splice(0)
+// 更新今日进度数据的函数
+const updateTodayProgress = () => {
+    if (!todayProgress.value) return
     
     // 查找所有项目进度类型的块
     const progressBlocks = blocks.filter(block => block.type === 'progress')
     
-    // 创建日期到内容的映射
-    const progressMap = new Map()
-    
+    // 简单解析：一行对应一项
+    const newContent = []
     progressBlocks.forEach(block => {
         const content = block.content.trim()
         if (!content) return
         
-        // 提取日期信息（假设内容以日期开头，格式如 2024-01-15 或 1月15日）
         const lines = content.split('\n').filter(line => line.trim())
-        if (lines.length === 0) return
-        
-        const firstLine = lines[0].trim()
-        let progressDate = null
-        let progressContent = []
-        
-        // 尝试匹配日期格式
-        const datePatterns = [
-            /^(\d{4}-\d{1,2}-\d{1,2})/,  // 2024-01-15
-            /^(\d{1,2}月\d{1,2}日)/,     // 1月15日
-            /^(\d{4}\/\d{1,2}\/\d{1,2})/, // 2024/01/15
-        ]
-        
-        let dateFound = false
-        for (const pattern of datePatterns) {
-            const match = firstLine.match(pattern)
-            if (match) {
-                const dateStr = match[1]
-                progressDate = parseDateString(dateStr)
-                
-                // 提取除了日期行之外的内容
-                const contentAfterDate = firstLine.replace(match[0], '').trim()
-                if (contentAfterDate) {
-                    progressContent.push(contentAfterDate)
-                }
-                
-                // 添加其他行的内容
-                progressContent.push(...lines.slice(1))
-                dateFound = true
-                break
-            }
-        }
-        
-        // 如果没有找到日期，使用当前日期
-        if (!dateFound) {
-            progressDate = new Date()
-            progressContent = lines
-        }
-        
-        // 清理内容，去除空行和无效内容
-        progressContent = progressContent
-            .filter(line => line.trim())
-            .map(line => line.trim().replace(/^[-*•]\s*/, '')) // 去除列表符号
-            .filter(line => line)
-        
-        if (progressContent.length === 0) return
-        
-        // 使用日期作为key进行分组
-        const dateKey = progressDate.toDateString()
-        if (!progressMap.has(dateKey)) {
-            progressMap.set(dateKey, {
-                date: progressDate,
-                content: []
-            })
-        }
-        
-        // 合并同一天的进度内容
-        progressMap.get(dateKey).content.push(...progressContent)
+        newContent.push(...lines)
     })
     
-    // 转换为数组并添加到progresses
-    progressMap.forEach(progress => {
-        progresses.push(progress)
-    })
+    // 更新今日进度的内容
+    todayProgress.value.content = newContent
 }
 
-// 辅助函数：解析日期字符串
-const parseDateString = (dateStr) => {
-    // 处理不同的日期格式
-    if (dateStr.includes('月') && dateStr.includes('日')) {
-        // 处理中文日期格式：1月15日
-        const match = dateStr.match(/(\d{1,2})月(\d{1,2})日/)
-        if (match) {
-            const month = parseInt(match[1]) - 1 // 月份从0开始
-            const day = parseInt(match[2])
-            const currentYear = new Date().getFullYear()
-            return new Date(currentYear, month, day)
+// 初始化今日进度指针
+const initTodayProgress = () => {
+    const today = new Date()
+    const todayDateString = today.toDateString()
+    
+    // 查找今天的进度
+    let todayItem = progresses.find(progress => 
+        new Date(progress.date).toDateString() === todayDateString
+    )
+    
+    // 如果没有今天的进度，创建一个
+    if (!todayItem) {
+        todayItem = {
+            date: today,
+            content: []
         }
-    } else if (dateStr.includes('-')) {
-        // 处理ISO格式：2024-01-15
-        return new Date(dateStr)
-    } else if (dateStr.includes('/')) {
-        // 处理斜杠格式：2024/01/15
-        return new Date(dateStr)
+        progresses.unshift(todayItem) // 添加到开头
     }
     
-    // 默认返回当前日期
-    return new Date()
+    todayProgress.value = todayItem
 }
 
 // Bug悬浮卡片状态管理
@@ -1999,11 +1956,11 @@ const handleDateChange = (date) => {
 
 
 
-// 监听blocks变化，当有progress类型的block发生变化时重新解析
+// 监听blocks变化，当有progress类型的block发生变化时重新更新今日进度
 watch(
     () => blocks.filter(block => block.type === 'progress'),
     () => {
-        parseProgressBlocks()
+        updateTodayProgress()
     },
     { deep: true }
 )
@@ -2020,8 +1977,8 @@ onMounted(() => {
     // 添加全局点击监听，用于关闭Bug详情卡片
     document.addEventListener('click', handleGlobalClick)
     
-    // 初始解析项目进度数据
-    parseProgressBlocks()
+    // 初始化今日进度指针
+    initTodayProgress()
 })
 
 onUnmounted(() => {
