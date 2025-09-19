@@ -3496,7 +3496,10 @@ textarea.block-content.editing {
 
 /* 滚动条样式 - 桌面应用风格 */
 .todo-items::-webkit-scrollbar,
-.idea-items::-webkit-scrollbar {
+.idea-items::-webkit-scrollbar,
+.bug-items::-webkit-scrollbar,
+.note-items::-webkit-scrollbar,
+.progress-items::-webkit-scrollbar {
     width: 4px;
 }
 
@@ -3506,12 +3509,18 @@ textarea.block-content.editing {
 
 .todo-items::-webkit-scrollbar-track,
 .idea-items::-webkit-scrollbar-track,
+.bug-items::-webkit-scrollbar-track,
+.note-items::-webkit-scrollbar-track,
+.progress-items::-webkit-scrollbar-track,
 .blocks-container::-webkit-scrollbar-track {
     background: transparent;
 }
 
 .todo-items::-webkit-scrollbar-thumb,
 .idea-items::-webkit-scrollbar-thumb,
+.bug-items::-webkit-scrollbar-thumb,
+.note-items::-webkit-scrollbar-thumb,
+.progress-items::-webkit-scrollbar-thumb,
 .blocks-container::-webkit-scrollbar-thumb {
     background: #d1d9e0;
     border-radius: 2px;
@@ -3519,6 +3528,9 @@ textarea.block-content.editing {
 
 .todo-items::-webkit-scrollbar-thumb:hover,
 .idea-items::-webkit-scrollbar-thumb:hover,
+.bug-items::-webkit-scrollbar-thumb:hover,
+.note-items::-webkit-scrollbar-thumb:hover,
+.progress-items::-webkit-scrollbar-thumb:hover,
 .blocks-container::-webkit-scrollbar-thumb:hover {
     background: #8b949e;
 }
