@@ -1076,10 +1076,46 @@ const sortedProgresses = computed(() => {
 
 // 更新今日进度数据的函数
 const updateTodayProgress = () => {
-    if (!todayProgress.value) return
-    
     // 查找所有项目进度类型的块
     const progressBlocks = blocks.filter(block => block.type === 'progress')
+    
+    // 如果没有progress块，删除今日进度项
+    if (progressBlocks.length === 0) {
+        if (todayProgress.value) {
+            // 从progresses数组中删除今日进度项
+            const todayIndex = progresses.findIndex(progress => 
+                new Date(progress.date).toDateString() === new Date(todayProgress.value.date).toDateString()
+            )
+            if (todayIndex !== -1) {
+                progresses.splice(todayIndex, 1)
+            }
+            // 清空今日进度指针
+            todayProgress.value = null
+        }
+        return
+    }
+    
+    // 初始化今日进度指针（只有在有progress块时才创建）
+    if (!todayProgress.value) {
+        const today = new Date()
+        const todayDateString = today.toDateString()
+        
+        // 查找今天的进度
+        let todayItem = progresses.find(progress => 
+            new Date(progress.date).toDateString() === todayDateString
+        )
+        
+        // 如果没有今天的进度，创建一个
+        if (!todayItem) {
+            todayItem = {
+                date: today,
+                content: []
+            }
+            progresses.unshift(todayItem) // 添加到开头
+        }
+        
+        todayProgress.value = todayItem
+    }
     
     // 简单解析：一行对应一项
     const newContent = []
@@ -1093,28 +1129,6 @@ const updateTodayProgress = () => {
     
     // 更新今日进度的内容
     todayProgress.value.content = newContent
-}
-
-// 初始化今日进度指针
-const initTodayProgress = () => {
-    const today = new Date()
-    const todayDateString = today.toDateString()
-    
-    // 查找今天的进度
-    let todayItem = progresses.find(progress => 
-        new Date(progress.date).toDateString() === todayDateString
-    )
-    
-    // 如果没有今天的进度，创建一个
-    if (!todayItem) {
-        todayItem = {
-            date: today,
-            content: []
-        }
-        progresses.unshift(todayItem) // 添加到开头
-    }
-    
-    todayProgress.value = todayItem
 }
 
 // Bug悬浮卡片状态管理
@@ -1976,9 +1990,6 @@ onMounted(() => {
     
     // 添加全局点击监听，用于关闭Bug详情卡片
     document.addEventListener('click', handleGlobalClick)
-    
-    // 初始化今日进度指针
-    initTodayProgress()
 })
 
 onUnmounted(() => {
