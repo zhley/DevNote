@@ -42,6 +42,16 @@
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                 </svg>
             </div>
+            <div 
+                class="toolbar-item"
+                :class="{ active: activeTab === 'progress' }"
+                @click="setActiveTab('progress')"
+                title="项目进度"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13,2.05V5.08C16.39,5.57 19,8.47 19,12C19,12.9 18.82,13.75 18.5,14.54L21.12,16.07C21.68,14.83 22,13.45 22,12C22,6.82 18.05,2.55 13,2.05M12,19C8.13,19 5,15.87 5,12C5,8.47 7.61,5.57 11,5.08V2.05C5.95,2.55 2,6.82 2,12C2,17.52 6.48,22 12,22C13.45,22 14.83,21.68 16.07,21.12L14.54,18.5C13.75,18.82 12.9,19 12,19M12,6A6,6 0 0,0 6,12C6,15.31 8.69,18 12,18C12.75,18 13.47,17.85 14.14,17.58L12,15.45V6Z"/>
+                </svg>
+            </div>
         </div>
 
         <!-- 左侧内容区域 -->
@@ -259,6 +269,35 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 项目进度区域 -->
+            <div v-if="activeTab === 'progress'" class="progress-list">
+                <div class="section-header">
+                    <h3>项目进度</h3>
+                </div>
+                <div class="progress-items">
+                    <div 
+                        v-for="(progress, index) in sortedProgresses" 
+                        :key="progress.date.getTime()"
+                        class="progress-item"
+                    >
+                        <div class="progress-header">
+                            <div class="progress-date">{{ formatDate(progress.date) }}</div>
+                            <div class="progress-count">{{ progress.content.length }} 项</div>
+                        </div>
+                        <div class="progress-content">
+                            <div 
+                                v-for="(item, itemIndex) in progress.content" 
+                                :key="itemIndex"
+                                class="progress-task"
+                            >
+                                <div class="task-indicator"></div>
+                                <span class="task-text">{{ item }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 分隔线 -->
@@ -433,7 +472,7 @@
     </div>
 </template>
 <script setup>
-import { ref, reactive, nextTick, computed } from 'vue'
+import { ref, reactive, nextTick, computed, watch } from 'vue'
 import { Delete, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
@@ -497,6 +536,9 @@ const notes = reactive([
         lastModified: new Date('2024-01-16')
     }
 ])
+
+// 项目进度数据
+const progresses = reactive([])
 
 // 当前选中的笔记
 const selectedNote = ref(null)
@@ -1003,6 +1045,120 @@ const sortedBugs = computed(() => {
         return new Date(b.createdAt) - new Date(a.createdAt)
     })
 })
+
+// 项目进度排序计算属性：按日期倒序排列（最新的在前）
+const sortedProgresses = computed(() => {
+    return [...progresses].sort((a, b) => {
+        return new Date(b.date) - new Date(a.date)
+    })
+})
+
+// 解析项目进度数据的函数
+const parseProgressBlocks = () => {
+    // 清空现有数据
+    progresses.splice(0)
+    
+    // 查找所有项目进度类型的块
+    const progressBlocks = blocks.filter(block => block.type === 'progress')
+    
+    // 创建日期到内容的映射
+    const progressMap = new Map()
+    
+    progressBlocks.forEach(block => {
+        const content = block.content.trim()
+        if (!content) return
+        
+        // 提取日期信息（假设内容以日期开头，格式如 2024-01-15 或 1月15日）
+        const lines = content.split('\n').filter(line => line.trim())
+        if (lines.length === 0) return
+        
+        const firstLine = lines[0].trim()
+        let progressDate = null
+        let progressContent = []
+        
+        // 尝试匹配日期格式
+        const datePatterns = [
+            /^(\d{4}-\d{1,2}-\d{1,2})/,  // 2024-01-15
+            /^(\d{1,2}月\d{1,2}日)/,     // 1月15日
+            /^(\d{4}\/\d{1,2}\/\d{1,2})/, // 2024/01/15
+        ]
+        
+        let dateFound = false
+        for (const pattern of datePatterns) {
+            const match = firstLine.match(pattern)
+            if (match) {
+                const dateStr = match[1]
+                progressDate = parseDateString(dateStr)
+                
+                // 提取除了日期行之外的内容
+                const contentAfterDate = firstLine.replace(match[0], '').trim()
+                if (contentAfterDate) {
+                    progressContent.push(contentAfterDate)
+                }
+                
+                // 添加其他行的内容
+                progressContent.push(...lines.slice(1))
+                dateFound = true
+                break
+            }
+        }
+        
+        // 如果没有找到日期，使用当前日期
+        if (!dateFound) {
+            progressDate = new Date()
+            progressContent = lines
+        }
+        
+        // 清理内容，去除空行和无效内容
+        progressContent = progressContent
+            .filter(line => line.trim())
+            .map(line => line.trim().replace(/^[-*•]\s*/, '')) // 去除列表符号
+            .filter(line => line)
+        
+        if (progressContent.length === 0) return
+        
+        // 使用日期作为key进行分组
+        const dateKey = progressDate.toDateString()
+        if (!progressMap.has(dateKey)) {
+            progressMap.set(dateKey, {
+                date: progressDate,
+                content: []
+            })
+        }
+        
+        // 合并同一天的进度内容
+        progressMap.get(dateKey).content.push(...progressContent)
+    })
+    
+    // 转换为数组并添加到progresses
+    progressMap.forEach(progress => {
+        progresses.push(progress)
+    })
+}
+
+// 辅助函数：解析日期字符串
+const parseDateString = (dateStr) => {
+    // 处理不同的日期格式
+    if (dateStr.includes('月') && dateStr.includes('日')) {
+        // 处理中文日期格式：1月15日
+        const match = dateStr.match(/(\d{1,2})月(\d{1,2})日/)
+        if (match) {
+            const month = parseInt(match[1]) - 1 // 月份从0开始
+            const day = parseInt(match[2])
+            const currentYear = new Date().getFullYear()
+            return new Date(currentYear, month, day)
+        }
+    } else if (dateStr.includes('-')) {
+        // 处理ISO格式：2024-01-15
+        return new Date(dateStr)
+    } else if (dateStr.includes('/')) {
+        // 处理斜杠格式：2024/01/15
+        return new Date(dateStr)
+    }
+    
+    // 默认返回当前日期
+    return new Date()
+}
 
 // Bug悬浮卡片状态管理
 const showBugDetailCard = ref(false)
@@ -1843,6 +1999,15 @@ const handleDateChange = (date) => {
 
 
 
+// 监听blocks变化，当有progress类型的block发生变化时重新解析
+watch(
+    () => blocks.filter(block => block.type === 'progress'),
+    () => {
+        parseProgressBlocks()
+    },
+    { deep: true }
+)
+
 // 组件挂载时初始化
 import { onMounted, onUnmounted } from 'vue'
 onMounted(() => {
@@ -1854,6 +2019,9 @@ onMounted(() => {
     
     // 添加全局点击监听，用于关闭Bug详情卡片
     document.addEventListener('click', handleGlobalClick)
+    
+    // 初始解析项目进度数据
+    parseProgressBlocks()
 })
 
 onUnmounted(() => {
@@ -2731,6 +2899,90 @@ const handleWindowResize = () => {
 .note-meta {
     font-size: 12px;
     color: #656d76;
+}
+
+/* 项目进度列表样式 */
+.progress-list {
+    background: #ffffff;
+    padding: 16px 16px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.progress-items {
+    flex: 1;
+    overflow-y: auto;
+    margin-right: -16px;
+    padding-right: 16px;
+}
+
+.progress-item {
+    margin-bottom: 16px;
+    border-radius: 6px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    padding: 12px;
+    transition: all 0.15s ease;
+}
+
+.progress-item:hover {
+    border-color: #d0d7de;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.progress-date {
+    font-size: 14px;
+    font-weight: 500;
+    color: #24292f;
+}
+
+.progress-count {
+    font-size: 12px;
+    color: #656d76;
+    background: #ffffff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.progress-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.progress-task {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.task-indicator {
+    width: 6px;
+    height: 6px;
+    background: #0969da;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.task-text {
+    color: #24292f;
+    flex: 1;
 }
 
 /* 笔记展示区样式 */
