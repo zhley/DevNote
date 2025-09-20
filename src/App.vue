@@ -10,9 +10,16 @@ import Workspace from "./components/Workspace.vue";
 import MenuBar from "./components/MenuBar.vue";
 import { onMounted } from 'vue'
 import { initProject } from './api/project'
+import { initDatabase, dailyCleanup } from './api/database'
 
 onMounted(async () => {
-    await initProject()
+    try {
+        await initProject()
+        await initDatabase()
+        await dailyCleanup()
+    } catch (error) {
+        console.error('Failed to initialize app:', error)
+    }
 })
 </script>
 

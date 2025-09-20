@@ -472,13 +472,19 @@
     </div>
 </template>
 <script setup>
-import { ref, reactive, nextTick, computed, watch } from 'vue'
+import { ref, reactive, nextTick, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Delete, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
 import { open } from '@tauri-apps/api/shell'
 import { mavonEditor } from 'mavon-editor'
 import 'mavon-editor/dist/css/index.css'
+
+// 导入数据库 API
+import { 
+    TodoAPI, BugAPI, IdeaAPI, NoteAPI, ProgressAPI, BlockAPI,
+    getDatabase, dailyCleanup 
+} from '../api/database'
 
 // 注册mavon-editor组件
 const components = {
@@ -514,49 +520,6 @@ const startLeftWidth = ref(0)
 
 // 侧边栏状态
 const activeTab = ref('todo')
-
-// 笔记数据 - 假数据
-const notes = reactive([
-    {
-        title: "Vue 3 学习笔记",
-        content: "# Vue 3 学习笔记\n\n这是一篇关于Vue 3的学习笔记...",
-        createdAt: new Date('2024-01-15'),
-        lastModified: new Date('2024-01-20')
-    },
-    {
-        title: "JavaScript 异步编程",
-        content: "# JavaScript 异步编程\n\n异步编程是JavaScript的重要特性...",
-        createdAt: new Date('2024-01-10'),
-        lastModified: new Date('2024-01-18')
-    },
-    {
-        title: "项目架构设计",
-        content: "# 项目架构设计\n\n良好的项目架构是成功的关键...",
-        createdAt: new Date('2024-01-05'),
-        lastModified: new Date('2024-01-16')
-    }
-])
-
-// 项目进度数据（从数据库中查出来的所有项目进度信息）
-const progresses = reactive([
-    // 模拟历史进度数据
-    {
-        date: new Date('2024-01-19'),
-        content: [
-            '搭建基础项目架构',
-            '配置开发环境',
-            '设计数据库结构'
-        ]
-    },
-    {
-        date: new Date('2024-01-18'), 
-        content: [
-            '进行需求分析',
-            '制定项目计划',
-            '确定技术栈选型'
-        ]
-    }
-])
 
 // 今日进度指针（指向progresses中今天的进度那一项）
 const todayProgress = ref(null)
@@ -840,63 +803,75 @@ const generateId = () => {
     return Date.now() + Math.random().toString(36).substr(2, 9)
 }
 
-// 待办事项数据
-const todos = reactive([
-    {
-        title: "完成项目文档编写",
-        content: "需要编写完整的项目文档，包括：\n- 项目介绍和功能说明\n- 安装和使用指南\n- API 文档\n- 常见问题解答",
-        priority: 3,
-        finished: false,
-        createdAt: new Date('2024-10-11'),
-        completedAt: null,
-        blockId: null // 用于关联工作区块
-    },
-    {
-        title: "优化代码性能",
-        content: "分析当前代码性能瓶颈：\n- 数据库查询优化\n- 前端资源压缩\n- 缓存策略改进\n- 代码分割和懒加载",
-        priority: 2,
-        finished: false,
-        createdAt: new Date('2024-10-15'),
-        completedAt: null,
-        blockId: null
-    },
-    {
-        title: "学习新技术框架",
-        content: "深入学习 Vue 3 新特性和相关生态：\n- Composition API 实践\n- Pinia 状态管理\n- Vue Router 4\n- TypeScript 集成",
-        priority: 1,
-        finished: true,
-        createdAt: new Date('2024-09-20'),
-        completedAt: new Date('2024-11-10'),
-        blockId: null
-    },
-    {
-        title: "设计系统架构",
-        content: "设计整体系统架构，包括前后端分离、微服务架构等",
-        priority: 3,
-        finished: false,
-        createdAt: new Date('2024-10-20'),
-        completedAt: null,
-        blockId: null
-    },
-    {
-        title: "测试用例编写",
-        content: "编写完整的单元测试和集成测试",
-        priority: 1,
-        finished: false,
-        createdAt: new Date('2024-10-18'),
-        completedAt: null,
-        blockId: null
-    },
-    {
-        title: "部署环境搭建",
-        content: "搭建生产环境部署流水线",
-        priority: 2,
-        finished: true,
-        createdAt: new Date('2024-10-01'),
-        completedAt: new Date('2024-10-05'),
-        blockId: null
+// 数据存储
+const todos = reactive([])
+const bugs = reactive([])
+const ideas = reactive([])
+const notes = reactive([])
+const progresses = reactive([])
+
+// 加载所有数据
+const loadAllData = async () => {
+    try {
+        const [todosData, bugsData, ideasData, notesData, progressesData, blocksData] = await Promise.all([
+            TodoAPI.getAll(),
+            BugAPI.getAll(),
+            IdeaAPI.getAll(),
+            NoteAPI.getAll(),
+            ProgressAPI.getAll(),
+            BlockAPI.getAll()
+        ])
+        
+        // 清空并重新填充
+        todos.splice(0, todos.length, ...todosData.map(todo => ({
+            ...todo,
+            finished: Boolean(todo.finished),
+            createdAt: new Date(todo.created_at),
+            completedAt: todo.completed_at ? new Date(todo.completed_at) : null
+        })))
+        
+        bugs.splice(0, bugs.length, ...bugsData.map(bug => ({
+            ...bug,
+            fixed: Boolean(bug.fixed),
+            createdAt: new Date(bug.created_at),
+            completedAt: bug.completed_at ? new Date(bug.completed_at) : null
+        })))
+        
+        ideas.splice(0, ideas.length, ...ideasData.map(idea => ({
+            ...idea,
+            createdAt: new Date(idea.created_at)
+        })))
+        
+        notes.splice(0, notes.length, ...notesData.map(note => ({
+            ...note,
+            createdAt: new Date(note.created_at),
+            lastModified: new Date(note.last_modified)
+        })))
+        
+        progresses.splice(0, progresses.length, ...progressesData.map(progress => ({
+            ...progress,
+            date: new Date(progress.date),
+            content: JSON.parse(progress.content),
+            createdAt: new Date(progress.created_at)
+        })))
+        
+        blocks.splice(0, blocks.length, ...blocksData.map(block => ({
+            ...block,
+            createdAt: new Date(block.created_at)
+        })))
+        
+        console.log('Data loaded successfully')
+    } catch (error) {
+        console.error('Failed to load data:', error)
+        ElMessage.error('加载数据失败')
     }
-])
+}
+
+// 在组件挂载时加载数据
+onMounted(async () => {
+    await loadAllData()
+    updateTodayProgress()
+})
 
 // 待办事项排序计算属性：未完成在前，按优先级从高到低，时间倒序
 const sortedTodos = computed(() => {
@@ -991,69 +966,8 @@ const positionTooltip = () => {
     }
 }
 
-// 灵感数据
-const ideas = reactive([
-    {
-        title: "移动端适配方案",
-        content: "考虑使用 CSS Grid 和 Flexbox 结合的方式来实现响应式布局，可以更好地适配不同屏幕尺寸。",
-        createdAt: new Date('2024-01-15'),
-        status: 'pending', // pending, in-progress, implemented, discarded
-        blockId: null // 用于关联工作区块
-    },
-    {
-        title: "用户体验优化",
-        content: "添加骨架屏加载效果，减少用户等待时的焦虑感，同时考虑添加懒加载来提升页面性能。",
-        createdAt: new Date('2024-01-14'),
-        status: 'in-progress',
-        blockId: null
-    },
-    {
-        title: "数据可视化",
-        content: "使用 ECharts 或 D3.js 来创建交互式图表，让数据展示更加直观和美观。",
-        createdAt: new Date('2024-01-13'),
-        status: 'implemented',
-        blockId: null
-    }
-])
-
 // 灵感展开状态管理
 const expandedIdeas = reactive(new Set())
-
-// Bug数据
-const bugs = reactive([
-    {
-        title: "登录页面样式问题",
-        description: "在Chrome浏览器中，登录按钮在某些分辨率下会出现样式错位问题，导致按钮文字显示不完整。",
-        fixed: false,
-        additionalInfo: "初步排查是CSS样式问题，可能与flexbox兼容性有关。尝试修改了z-index和position属性，问题依然存在。计划使用媒体查询进行响应式适配。",
-        createdAt: new Date('2024-01-12'),
-        completedAt: null
-    },
-    {
-        title: "数据保存失败",
-        description: "用户在编辑个人信息后点击保存，偶尔会出现保存失败的情况，错误信息为网络超时。",
-        fixed: false,
-        additionalInfo: "问题原因：后端API响应时间过长，前端超时设置为5秒。已尝试增加超时时间到10秒，并添加重试机制。需要优化后端数据库查询性能。",
-        createdAt: new Date('2024-01-08'),
-        completedAt: null
-    },
-    {
-        title: "搜索功能异常",
-        description: "在搜索框输入特殊字符时，会导致页面崩溃或返回错误的搜索结果。",
-        fixed: true,
-        additionalInfo: "解决方案：对用户输入进行转义处理，使用正则表达式过滤特殊字符。已在前端和后端都添加了输入验证。测试通过，问题已解决。",
-        createdAt: new Date('2024-01-15'),
-        completedAt: new Date('2024-01-16')
-    },
-    {
-        title: "移动端适配问题",
-        description: "在移动设备上访问时，部分页面元素显示异常，影响用户体验。",
-        fixed: true,
-        additionalInfo: "通过媒体查询和响应式设计解决了大部分适配问题。已在多种设备上测试通过。",
-        createdAt: new Date('2024-01-05'),
-        completedAt: new Date('2024-01-07')
-    }
-])
 
 // Bug排序计算属性：未修复的在前，按时间倒序
 const sortedBugs = computed(() => {
@@ -1075,60 +989,67 @@ const sortedProgresses = computed(() => {
 })
 
 // 更新今日进度数据的函数
-const updateTodayProgress = () => {
-    // 查找所有项目进度类型的块
-    const progressBlocks = blocks.filter(block => block.type === 'progress')
-    
-    // 如果没有progress块，删除今日进度项
-    if (progressBlocks.length === 0) {
-        if (todayProgress.value) {
-            // 从progresses数组中删除今日进度项
-            const todayIndex = progresses.findIndex(progress => 
-                new Date(progress.date).toDateString() === new Date(todayProgress.value.date).toDateString()
-            )
-            if (todayIndex !== -1) {
-                progresses.splice(todayIndex, 1)
+const updateTodayProgress = async () => {
+    try {
+        // 查找所有项目进度类型的块
+        const progressBlocks = blocks.filter(block => block.type === 'progress')
+        
+        // 如果没有progress块，删除今日进度项
+        if (progressBlocks.length === 0) {
+            if (todayProgress.value) {
+                // 从数据库删除今日进度项
+                if (todayProgress.value.id) {
+                    await ProgressAPI.delete(todayProgress.value.id)
+                }
+                // 从本地数组中删除今日进度项
+                const todayIndex = progresses.findIndex(progress => 
+                    new Date(progress.date).toDateString() === new Date(todayProgress.value.date).toDateString()
+                )
+                if (todayIndex !== -1) {
+                    progresses.splice(todayIndex, 1)
+                }
+                // 清空今日进度指针
+                todayProgress.value = null
             }
-            // 清空今日进度指针
-            todayProgress.value = null
+            return
         }
-        return
-    }
-    
-    // 初始化今日进度指针（只有在有progress块时才创建）
-    if (!todayProgress.value) {
+        
+        // 简单解析：一行对应一项
+        const newContent = []
+        progressBlocks.forEach(block => {
+            const content = block.content.trim()
+            if (!content) return
+            
+            const lines = content.split('\n').filter(line => line.trim())
+            newContent.push(...lines)
+        })
+        
         const today = new Date()
-        const todayDateString = today.toDateString()
-        
-        // 查找今天的进度
-        let todayItem = progresses.find(progress => 
-            new Date(progress.date).toDateString() === todayDateString
-        )
-        
-        // 如果没有今天的进度，创建一个
-        if (!todayItem) {
-            todayItem = {
-                date: today,
-                content: []
-            }
-            progresses.unshift(todayItem) // 添加到开头
+        const progressData = {
+            date: today,
+            content: newContent
         }
         
-        todayProgress.value = todayItem
-    }
-    
-    // 简单解析：一行对应一项
-    const newContent = []
-    progressBlocks.forEach(block => {
-        const content = block.content.trim()
-        if (!content) return
+        // 使用数据库保存或更新今日进度
+        const savedProgress = await ProgressAPI.createOrUpdate(progressData)
         
-        const lines = content.split('\n').filter(line => line.trim())
-        newContent.push(...lines)
-    })
-    
-    // 更新今日进度的内容
-    todayProgress.value.content = newContent
+        // 更新本地状态
+        if (!todayProgress.value) {
+            // 如果没有今日进度指针，创建并添加到数组开头
+            progresses.unshift(savedProgress)
+            todayProgress.value = savedProgress
+        } else {
+            // 更新现有的今日进度项
+            todayProgress.value.content = savedProgress.content
+            const existingIndex = progresses.findIndex(p => p.id === savedProgress.id)
+            if (existingIndex !== -1) {
+                progresses[existingIndex] = savedProgress
+            }
+        }
+        
+    } catch (error) {
+        console.error('更新今日进度失败:', error)
+    }
 }
 
 // Bug悬浮卡片状态管理
@@ -1262,41 +1183,66 @@ const handleGlobalClick = (event) => {
 }
 
 // 切换Bug状态
-const toggleBugStatus = (index) => {
-    const bug = bugs[index]
-    if (bug.fixed) {
-        bug.completedAt = new Date()
-        ElMessage.success('Bug已标记为修复！')
-    } else {
-        bug.completedAt = null
-        ElMessage.success('Bug已标记为未修复')
+const toggleBugStatus = async (index) => {
+    try {
+        const bug = bugs[index]
+        bug.fixed = !bug.fixed
+        
+        if (bug.fixed) {
+            bug.completedAt = new Date()
+            ElMessage.success('Bug已标记为修复！')
+        } else {
+            bug.completedAt = null
+            ElMessage.success('Bug已标记为未修复')
+        }
+        
+        // 保存到数据库
+        if (bug.id) {
+            await BugAPI.update(bug.id, bug)
+        }
+    } catch (error) {
+        console.error('更新Bug状态失败:', error)
+        ElMessage.error('更新Bug状态失败')
     }
 }
 
 // 切换待办事项完成状态
-const toggleTodo = (todo) => {
-    if (todo.finished) {
-        todo.completedAt = new Date()
-        ElMessage.success('任务已完成！')
-        
-        // 如果有关联的灵感，将灵感状态改为已实施
-        if (todo.ideaId) {
-            const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
-            if (ideaIndex !== -1) {
-                ideas[ideaIndex].status = 'implemented'
+const toggleTodo = async (todo) => {
+    try {
+        if (todo.finished) {
+            todo.completedAt = new Date()
+            ElMessage.success('任务已完成！')
+            
+            // 如果有关联的灵感，将灵感状态改为已实施
+            if (todo.ideaId) {
+                const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+                if (ideaIndex !== -1) {
+                    ideas[ideaIndex].status = 'implemented'
+                    await IdeaAPI.update(ideas[ideaIndex].id, { status: 'implemented' })
+                }
+            }
+        } else {
+            todo.completedAt = null
+            ElMessage.success('任务已标记为未完成')
+            
+            // 如果有关联的灵感，将灵感状态改为待办中
+            if (todo.ideaId) {
+                const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+                if (ideaIndex !== -1) {
+                    ideas[ideaIndex].status = 'in-progress'
+                    await IdeaAPI.update(ideas[ideaIndex].id, { status: 'in-progress' })
+                }
             }
         }
-    } else {
-        todo.completedAt = null
-        ElMessage.success('任务已标记为未完成')
         
-        // 如果有关联的灵感，将灵感状态改为待办中
-        if (todo.ideaId) {
-            const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
-            if (ideaIndex !== -1) {
-                ideas[ideaIndex].status = 'in-progress'
-            }
-        }
+        // 更新数据库
+        await TodoAPI.update(todo.id, {
+            finished: todo.finished,
+            completed_at: todo.completedAt?.toISOString()
+        })
+    } catch (error) {
+        console.error('Failed to update todo:', error)
+        ElMessage.error('更新失败')
     }
 }
 
@@ -1515,61 +1461,71 @@ const handleCommand = () => {
 
 // 创建新区域
 const createBlock = async (type, title = '', priority = 2) => {
-    let content = ''
-    if (title) {
-        // 对待办事项使用加粗格式，其他类型使用一级标题
-        if (type === 'todo') {
-            content = `**${title}**`
-        } else {
-            content = `# ${title}`
-        }
-    }
-    
-    // 按照用户思路重构block数据结构
-    const newBlock = {
-        id: generateId(),
-        type: type,
-        content: content
-    }
-    
-    // 为待办事项类型添加优先级属性
-    if (type === 'todo') {
-        newBlock.priority = priority
-    }
-    
-    blocks.push(newBlock)
-    
-    // 设置为编辑模式
-    editingBlockId.value = newBlock.id
-    
-    // 等待DOM更新后聚焦到新区域
-    await nextTick()
-    
-    // 使用 setTimeout 确保DOM完全渲染
-    setTimeout(() => {
-        const blockElement = blockRefs.get(newBlock.id)
-        if (blockElement) {
-            blockElement.focus()
-            
-            // 如果有标题，将光标放到内容末尾
-            if (title && blockElement.tagName === 'TEXTAREA') {
-                const textLength = blockElement.value.length
-                blockElement.setSelectionRange(textLength, textLength)
+    try {
+        let content = ''
+        if (title) {
+            // 对待办事项使用加粗格式，其他类型使用一级标题
+            if (type === 'todo') {
+                content = `**${title}**`
+            } else {
+                content = `# ${title}`
             }
         }
-    }, 100)
-    
-    // 构建提示消息
-    let message = `${getBlockTypeLabel(type)}区域已创建`
-    if (title) {
-        message += `：${title}`
+        
+        // 按照用户思路重构block数据结构
+        const newBlock = {
+            id: generateId(),
+            type: type,
+            content: content,
+            created_at: new Date().toISOString()
+        }
+        
+        // 为待办事项类型添加优先级属性
+        if (type === 'todo') {
+            newBlock.priority = priority
+        }
+        
+        // 保存到数据库
+        await BlockAPI.create(newBlock)
+        
+        // 添加到本地数组
+        blocks.push(newBlock)
+        
+        // 设置为编辑模式
+        editingBlockId.value = newBlock.id
+        
+        // 等待DOM更新后聚焦到新区域
+        await nextTick()
+        
+        // 使用 setTimeout 确保DOM完全渲染
+        setTimeout(() => {
+            const blockElement = blockRefs.get(newBlock.id)
+            if (blockElement) {
+                blockElement.focus()
+                
+                // 如果有标题，将光标放到内容末尾
+                if (title && blockElement.tagName === 'TEXTAREA') {
+                    const textLength = blockElement.value.length
+                    blockElement.setSelectionRange(textLength, textLength)
+                }
+            }
+        }, 100)
+        
+        // 构建提示消息
+        let message = `${getBlockTypeLabel(type)}区域已创建`
+        if (title) {
+            message += `：${title}`
+        }
+        if (type === 'todo' && priority !== 2) {
+            const priorityText = getPriorityText(priority)
+            message += ` (优先级：${priorityText})`
+        }
+        
+        ElMessage.success(message)
+    } catch (error) {
+        console.error('Failed to create block:', error)
+        ElMessage.error('创建失败')
     }
-    if (type === 'todo' && priority !== 2) {
-        const priorityText = getPriorityText(priority)
-        message += ` (优先级：${priorityText})`
-    }
-    
-    ElMessage.success(message)
 }
 
 // 处理区域获得焦点
@@ -1601,20 +1557,29 @@ const handleBlockFocus = (blockId) => {
 }
 
 // 处理区域失去焦点
-const handleBlockBlur = (index, blockId, event) => {
-    // 使用v-model后，content已自动同步，无需手动获取
-    const block = blocks[index]
-    editingBlockId.value = null
-    
-    // 如果是待办、灵感或Bug类型的块，且有内容，则同步到对应的列表
-    if (block.content.trim()) {
-        if (block.type === 'todo') {
-            syncBlockToTodo(block, index)
-        } else if (block.type === 'idea') {
-            syncBlockToIdea(block, index)
-        } else if (block.type === 'bug') {
-            syncBlockToBug(block, index)
+const handleBlockBlur = async (index, blockId, event) => {
+    try {
+        // 使用v-model后，content已自动同步，无需手动获取
+        const block = blocks[index]
+        editingBlockId.value = null
+        
+        // 保存块内容到数据库
+        if (block.id) {
+            await BlockAPI.update(block.id, block)
         }
+        
+        // 如果是待办、灵感或Bug类型的块，且有内容，则同步到对应的列表
+        if (block.content.trim()) {
+            if (block.type === 'todo') {
+                await syncBlockToTodo(block, index)
+            } else if (block.type === 'idea') {
+                await syncBlockToIdea(block, index)
+            } else if (block.type === 'bug') {
+                await syncBlockToBug(block, index)
+            }
+        }
+    } catch (error) {
+        console.error('保存块内容失败:', error)
     }
 }
 
@@ -1659,7 +1624,7 @@ const handleGlobalKeydown = (event) => {
 }
 
 // 处理区域内按键事件
-const handleBlockKeydown = (event, index) => {
+const handleBlockKeydown = async (event, index) => {
     // 检查是否按下了ESC键
     if (event.key === 'Escape') {
         event.preventDefault()
@@ -1668,12 +1633,21 @@ const handleBlockKeydown = (event, index) => {
         const block = blocks[index]
         editingBlockId.value = null
         
+        // 保存块内容到数据库
+        try {
+            if (block.id) {
+                await BlockAPI.update(block.id, block)
+            }
+        } catch (error) {
+            console.error('保存块内容失败:', error)
+        }
+        
         // 如果是待办或灵感类型的块，且有内容，则同步到对应的列表
         if (block.content.trim()) {
             if (block.type === 'todo') {
-                syncBlockToTodo(block, index)
+                await syncBlockToTodo(block, index)
             } else if (block.type === 'idea') {
-                syncBlockToIdea(block, index)
+                await syncBlockToIdea(block, index)
             }
         }
         
@@ -1690,175 +1664,238 @@ const handleBlockKeydown = (event, index) => {
         if (block.content.trim() === '') {
             event.preventDefault()
             
-            // 获取block信息用于提示
-            const blockType = getBlockTypeLabel(block.type)
-            
-            // 删除关联的待办事项、灵感或Bug（工作区 → 列表同步）
-            if (block.type === 'todo' && block.id) {
-                const todoIndex = todos.findIndex(todo => todo.blockId === block.id)
-                if (todoIndex !== -1) {
-                    const todo = todos[todoIndex]
-                    
-                    // 如果待办项关联了灵感，将灵感状态改为待验证
-                    if (todo.ideaId) {
-                        const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
-                        if (ideaIndex !== -1) {
-                            ideas[ideaIndex].status = 'pending'
+            try {
+                // 获取block信息用于提示
+                const blockType = getBlockTypeLabel(block.type)
+                
+                // 删除关联的待办事项、灵感或Bug（工作区 → 列表同步）
+                if (block.type === 'todo' && block.id) {
+                    const todoIndex = todos.findIndex(todo => todo.blockId === block.id)
+                    if (todoIndex !== -1) {
+                        const todo = todos[todoIndex]
+                        
+                        // 如果待办项关联了灵感，将灵感状态改为待验证
+                        if (todo.ideaId) {
+                            const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+                            if (ideaIndex !== -1) {
+                                ideas[ideaIndex].status = 'pending'
+                                if (ideas[ideaIndex].id) {
+                                    await IdeaAPI.update(ideas[ideaIndex].id, ideas[ideaIndex])
+                                }
+                            }
                         }
+                        
+                        // 从数据库删除todo
+                        if (todo.id) {
+                            await TodoAPI.delete(todo.id)
+                        }
+                        todos.splice(todoIndex, 1)
                     }
-                    
-                    todos.splice(todoIndex, 1)
+                } else if (block.type === 'idea' && block.id) {
+                    const ideaIndex = ideas.findIndex(idea => idea.blockId === block.id)
+                    if (ideaIndex !== -1) {
+                        const idea = ideas[ideaIndex]
+                        if (idea.id) {
+                            await IdeaAPI.delete(idea.id)
+                        }
+                        ideas.splice(ideaIndex, 1)
+                    }
+                } else if (block.type === 'bug' && block.id) {
+                    const bugIndex = bugs.findIndex(bug => bug.blockId === block.id)
+                    if (bugIndex !== -1) {
+                        const bug = bugs[bugIndex]
+                        if (bug.id) {
+                            await BugAPI.delete(bug.id)
+                        }
+                        bugs.splice(bugIndex, 1)
+                    }
                 }
-            } else if (block.type === 'idea' && block.id) {
-                const ideaIndex = ideas.findIndex(idea => idea.blockId === block.id)
-                if (ideaIndex !== -1) {
-                    ideas.splice(ideaIndex, 1)
+                
+                // 从数据库删除block
+                if (block.id) {
+                    await BlockAPI.delete(block.id)
                 }
-            } else if (block.type === 'bug' && block.id) {
-                const bugIndex = bugs.findIndex(bug => bug.blockId === block.id)
-                if (bugIndex !== -1) {
-                    bugs.splice(bugIndex, 1)
-                }
+                
+                // 删除block
+                blocks.splice(index, 1)
+                editingBlockId.value = null
+                
+                ElMessage.success(`${blockType}区域已删除`)
+            } catch (error) {
+                console.error('删除块失败:', error)
+                ElMessage.error('删除失败')
             }
-            
-            // 删除block
-            blocks.splice(index, 1)
-            editingBlockId.value = null
-            
-            ElMessage.success(`${blockType}区域已删除`)
         }
     }
 }
 
 // 同步块内容到待办清单
-const syncBlockToTodo = (block, blockIndex) => {
-    const lines = block.content.split('\n').filter(line => line.trim())
-    if (lines.length === 0) return
-    
-    // 第一行作为标题，去掉可能的#前缀或**包裹
-    let title = lines[0].trim()
-    if (title.startsWith('#')) {
-        title = title.replace(/^#+\s*/, '').trim()
-    } else if (title.startsWith('**') && title.endsWith('**')) {
-        title = title.replace(/^\*\*|\*\*$/g, '').trim()
-    }
-    
-    // 第二行开始作为详细内容
-    const content = lines.slice(1).join('\n').trim()
-    
-    // 获取优先级（如果块有优先级属性）
-    const priority = block.priority || 2
-    
-    // 检查是否已存在相同blockId的待办事项
-    const existingIndex = todos.findIndex(todo => todo.blockId === block.id)
-    if (existingIndex !== -1) {
-        // 更新existing todo
-        const existingTodo = todos[existingIndex]
-        existingTodo.title = title
+const syncBlockToTodo = async (block, blockIndex) => {
+    try {
+        const lines = block.content.split('\n').filter(line => line.trim())
+        if (lines.length === 0) return
         
-        // 如果是从灵感创建的待办，将工作区内容追加到原有内容
-        if (existingTodo.ideaId && content) {
-            existingTodo.content = content
+        // 第一行作为标题，去掉可能的#前缀或**包裹
+        let title = lines[0].trim()
+        if (title.startsWith('#')) {
+            title = title.replace(/^#+\s*/, '').trim()
+        } else if (title.startsWith('**') && title.endsWith('**')) {
+            title = title.replace(/^\*\*|\*\*$/g, '').trim()
+        }
+        
+        // 第二行开始作为详细内容
+        const content = lines.slice(1).join('\n').trim()
+        
+        // 获取优先级（如果块有优先级属性）
+        const priority = block.priority || 2
+        
+        // 检查是否已存在相同blockId的待办事项
+        const existingIndex = todos.findIndex(todo => todo.blockId === block.id)
+        if (existingIndex !== -1) {
+            // 更新existing todo
+            const existingTodo = todos[existingIndex]
+            existingTodo.title = title
+            
+            // 如果是从灵感创建的待办，将工作区内容追加到原有内容
+            if (existingTodo.ideaId && content) {
+                existingTodo.content = content
+            } else {
+                existingTodo.content = content
+            }
+            
+            existingTodo.priority = priority
+            
+            // 保存到数据库
+            if (existingTodo.id) {
+                await TodoAPI.update(existingTodo.id, existingTodo)
+            }
+            
+            ElMessage.success('待办事项已更新')
         } else {
-            existingTodo.content = content
+            // 创建新的待办事项
+            const newTodo = {
+                title: title,
+                content: content,
+                priority: priority,
+                finished: false,
+                createdAt: new Date(),
+                completedAt: null,
+                blockId: block.id // 关联到原始块
+            }
+            
+            // 保存到数据库
+            const savedTodo = await TodoAPI.create(newTodo)
+            todos.unshift(savedTodo)
+            ElMessage.success('已添加到待办清单')
         }
-        
-        existingTodo.priority = priority
-        ElMessage.success('待办事项已更新')
-    } else {
-        // 创建新的待办事项
-        const newTodo = {
-            title: title,
-            content: content,
-            priority: priority,
-            finished: false,
-            createdAt: new Date(),
-            completedAt: null,
-            blockId: block.id // 关联到原始块
-        }
-        
-        todos.unshift(newTodo)
-        ElMessage.success('已添加到待办清单')
+    } catch (error) {
+        console.error('同步待办事项失败:', error)
+        ElMessage.error('同步待办事项失败')
     }
 }
 
 // 同步块内容到灵感池
-const syncBlockToIdea = (block, blockIndex) => {
-    const lines = block.content.split('\n').filter(line => line.trim())
-    if (lines.length === 0) return
-    
-    // 第一行作为标题，去掉可能的#前缀
-    let title = lines[0].trim()
-    if (title.startsWith('#')) {
-        title = title.replace(/^#+\s*/, '').trim()
-    }
-    
-    // 第二行开始作为详细内容
-    const content = lines.slice(1).join('\n').trim()
-    
-    // 创建新的灵感
-    const newIdea = {
-        title: title,
-        content: content,
-        createdAt: new Date(),
-        status: 'pending',
-        blockId: block.id // 关联到原始块
-    }
-    
-    // 检查是否已存在相同blockId的灵感
-    const existingIndex = ideas.findIndex(idea => idea.blockId === block.id)
-    if (existingIndex !== -1) {
-        // 更新existing idea
-        ideas[existingIndex].title = title
-        ideas[existingIndex].content = content
-        ElMessage.success('灵感已更新')
-    } else {
-        // 添加新的灵感
-        ideas.unshift(newIdea)
-        ElMessage.success('已添加到灵感池')
+const syncBlockToIdea = async (block, blockIndex) => {
+    try {
+        const lines = block.content.split('\n').filter(line => line.trim())
+        if (lines.length === 0) return
+        
+        // 第一行作为标题，去掉可能的#前缀
+        let title = lines[0].trim()
+        if (title.startsWith('#')) {
+            title = title.replace(/^#+\s*/, '').trim()
+        }
+        
+        // 第二行开始作为详细内容
+        const content = lines.slice(1).join('\n').trim()
+        
+        // 检查是否已存在相同blockId的灵感
+        const existingIndex = ideas.findIndex(idea => idea.blockId === block.id)
+        if (existingIndex !== -1) {
+            // 更新existing idea
+            ideas[existingIndex].title = title
+            ideas[existingIndex].content = content
+            
+            // 保存到数据库
+            if (ideas[existingIndex].id) {
+                await IdeaAPI.update(ideas[existingIndex].id, ideas[existingIndex])
+            }
+            
+            ElMessage.success('灵感已更新')
+        } else {
+            // 创建新的灵感
+            const newIdea = {
+                title: title,
+                content: content,
+                createdAt: new Date(),
+                status: 'pending',
+                blockId: block.id // 关联到原始块
+            }
+            
+            // 保存到数据库
+            const savedIdea = await IdeaAPI.create(newIdea)
+            ideas.unshift(savedIdea)
+            ElMessage.success('已添加到灵感池')
+        }
+    } catch (error) {
+        console.error('同步灵感失败:', error)
+        ElMessage.error('同步灵感失败')
     }
 }
 
 // 同步块内容到Bug列表
-const syncBlockToBug = (block, blockIndex) => {
-    const lines = block.content.split('\n').filter(line => line.trim())
-    if (lines.length === 0) return
-    
-    // 第一行作为标题，去掉可能的#前缀
-    let title = lines[0].trim()
-    if (title.startsWith('#')) {
-        title = title.replace(/^#+\s*/, '').trim()
-    }
-    
-    // 第二行作为描述
-    const description = lines.length > 1 ? lines[1].trim() : ''
-    
-    // 第三行开始作为追加信息
-    const additionalInfo = lines.length > 2 ? lines.slice(2).join('\n').trim() : ''
-    
-    // 检查是否已存在相同blockId的Bug
-    const existingIndex = bugs.findIndex(bug => bug.blockId === block.id)
-    if (existingIndex !== -1) {
-        // 更新existing bug
-        const existingBug = bugs[existingIndex]
-        existingBug.title = title
-        existingBug.description = description
-        existingBug.additionalInfo = additionalInfo
-        ElMessage.success('Bug信息已更新')
-    } else {
-        // 创建新的Bug
-        const newBug = {
-            title: title,
-            description: description,
-            additionalInfo: additionalInfo,
-            fixed: false,
-            createdAt: new Date(),
-            completedAt: null,
-            blockId: block.id // 关联到原始块
+const syncBlockToBug = async (block, blockIndex) => {
+    try {
+        const lines = block.content.split('\n').filter(line => line.trim())
+        if (lines.length === 0) return
+        
+        // 第一行作为标题，去掉可能的#前缀
+        let title = lines[0].trim()
+        if (title.startsWith('#')) {
+            title = title.replace(/^#+\s*/, '').trim()
         }
         
-        bugs.unshift(newBug)
-        ElMessage.success('已添加到Bug列表')
+        // 第二行作为描述
+        const description = lines.length > 1 ? lines[1].trim() : ''
+        
+        // 第三行开始作为追加信息
+        const additionalInfo = lines.length > 2 ? lines.slice(2).join('\n').trim() : ''
+        
+        // 检查是否已存在相同blockId的Bug
+        const existingIndex = bugs.findIndex(bug => bug.blockId === block.id)
+        if (existingIndex !== -1) {
+            // 更新existing bug
+            const existingBug = bugs[existingIndex]
+            existingBug.title = title
+            existingBug.description = description
+            existingBug.additionalInfo = additionalInfo
+            
+            // 保存到数据库
+            if (existingBug.id) {
+                await BugAPI.update(existingBug.id, existingBug)
+            }
+            
+            ElMessage.success('Bug信息已更新')
+        } else {
+            // 创建新的Bug
+            const newBug = {
+                title: title,
+                description: description,
+                additionalInfo: additionalInfo,
+                fixed: false,
+                createdAt: new Date(),
+                completedAt: null,
+                blockId: block.id // 关联到原始块
+            }
+            
+            // 保存到数据库
+            const savedBug = await BugAPI.create(newBug)
+            bugs.unshift(savedBug)
+            ElMessage.success('已添加到Bug列表')
+        }
+    } catch (error) {
+        console.error('同步Bug失败:', error)
+        ElMessage.error('同步Bug失败')
     }
 }
 
@@ -1980,7 +2017,6 @@ watch(
 )
 
 // 组件挂载时初始化
-import { onMounted, onUnmounted } from 'vue'
 onMounted(() => {
     // 添加全局键盘监听
     document.addEventListener('keydown', handleGlobalKeydown)

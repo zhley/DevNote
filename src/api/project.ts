@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { appDataDir, appConfigDir, join } from '@tauri-apps/api/path'
-import { exists, writeFile, readTextFile, createDir } from '@tauri-apps/api/fs'
-import { open, save } from '@tauri-apps/api/dialog'
+import { exists, writeTextFile, readTextFile, mkdir } from '@tauri-apps/plugin-fs'
+import { open, save } from '@tauri-apps/plugin-dialog'
 
 type ProjectConfig = {
   lastProjectPath?: string
@@ -14,7 +14,7 @@ export const currentProjectPath = ref<string | null>(null)
 
 async function ensureDir(dirPath: string) {
   try {
-    await createDir(dirPath, { recursive: true })
+    await mkdir(dirPath, { recursive: true })
   } catch (_) {
     // ignore if exists or cannot create (will fail later on writes)
   }
@@ -39,12 +39,12 @@ async function readConfig(): Promise<ProjectConfig> {
 
 async function writeConfig(cfg: ProjectConfig): Promise<void> {
   const path = await getConfigFilePath()
-  await writeFile({ path, contents: JSON.stringify(cfg, null, 2) })
+  await writeTextFile(path, JSON.stringify(cfg, null, 2))
 }
 
 async function createEmptyFile(filePath: string) {
   // For SQLite, an empty file is fine; it will be initialized on first connection
-  await writeFile({ path: filePath, contents: '' })
+  await writeTextFile(filePath, '')
 }
 
 async function defaultProjectPath(): Promise<string> {
