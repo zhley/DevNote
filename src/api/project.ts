@@ -8,75 +8,142 @@ type ProjectConfig = {
 }
 
 const CONFIG_FILE = 'config.json'
-const DEFAULT_DB_NAME = 'devnote.db'
+const DEFAULT_DB_NAME = 'default.db'
 
 export const currentProjectPath = ref<string | null>(null)
 
 async function ensureDir(dirPath: string) {
   try {
+    console.log('Creating directory:', dirPath)
     await mkdir(dirPath, { recursive: true })
-  } catch (_) {
-    // ignore if exists or cannot create (will fail later on writes)
+    console.log('Directory created successfully:', dirPath)
+  } catch (error) {
+    console.error('Failed to create directory:', dirPath, error)
+    // 不抛出错误，让后续文件写入失败时再处理
   }
 }
 
 async function getConfigFilePath(): Promise<string> {
-  const cfgDir = await appConfigDir()
-  await ensureDir(cfgDir)
-  return await join(cfgDir, CONFIG_FILE)
+  try {
+    const cfgDir = await appConfigDir()
+    console.log('App config dir:', cfgDir)
+    await ensureDir(cfgDir)
+    const configPath = await join(cfgDir, CONFIG_FILE)
+    console.log('Config file path:', configPath)
+    return configPath
+  } catch (error) {
+    console.error('Failed to get config file path:', error)
+    throw error
+  }
 }
 
 async function readConfig(): Promise<ProjectConfig> {
   try {
+    console.log('Reading config...')
     const path = await getConfigFilePath()
-    if (!(await exists(path))) return {}
+    
+    if (!(await exists(path))) {
+      console.log('Config file does not exist:', path)
+      return {}
+    }
+    
+    console.log('Reading config from:', path)
     const content = await readTextFile(path)
-    return JSON.parse(content) as ProjectConfig
-  } catch {
+    const config = JSON.parse(content) as ProjectConfig
+    console.log('Config loaded:', config)
+    return config
+  } catch (error) {
+    console.error('Failed to read config:', error)
     return {}
   }
 }
 
 async function writeConfig(cfg: ProjectConfig): Promise<void> {
-  const path = await getConfigFilePath()
-  await writeTextFile(path, JSON.stringify(cfg, null, 2))
+  try {
+    console.log('Writing config:', cfg)
+    const path = await getConfigFilePath()
+    await writeTextFile(path, JSON.stringify(cfg, null, 2))
+    console.log('Config written successfully to:', path)
+  } catch (error) {
+    console.error('Failed to write config:', error)
+    throw error
+  }
 }
 
 async function createEmptyFile(filePath: string) {
-  // For SQLite, an empty file is fine; it will be initialized on first connection
-  await writeTextFile(filePath, '')
+  try {
+    console.log('Creating empty file:', filePath)
+    // For SQLite, an empty file is fine; it will be initialized on first connection
+    await writeTextFile(filePath, '')
+    console.log('Empty file created successfully:', filePath)
+  } catch (error) {
+    console.error('Failed to create empty file:', filePath, error)
+    throw error
+  }
 }
 
 async function defaultProjectPath(): Promise<string> {
-  const dataDir = await join(await appDataDir(), "projects")
-  await ensureDir(dataDir)
-  return await join(dataDir, DEFAULT_DB_NAME)
+  try {
+    console.log('Getting default project path...')
+    const appData = await appDataDir()
+    console.log('App data dir:', appData)
+    
+    const dataDir = await join(appData, "projects")
+    console.log('Projects dir:', dataDir)
+    
+    await ensureDir(dataDir)
+    
+    const defaultPath = await join(dataDir, DEFAULT_DB_NAME)
+    console.log('Default project path:', defaultPath)
+    
+    return defaultPath
+  } catch (error) {
+    console.error('Failed to get default project path:', error)
+    throw error
+  }
 }
 
 export async function initProject(): Promise<string> {
-  console.log('Initializing project...')
-  
-  const cfg = await readConfig()
-  console.log('Read config:', cfg)
-  
-  if (cfg.lastProjectPath && (await exists(cfg.lastProjectPath))) {
-    console.log('Using existing project path:', cfg.lastProjectPath)
-    currentProjectPath.value = cfg.lastProjectPath
-    return cfg.lastProjectPath
+  try {
+    console.log('=== Starting project initialization ===')
+    
+    // 测试Tauri API是否正常工作
+    try {
+      const appData = await appDataDir()
+      console.log('✓ Tauri API working, app data dir:', appData)
+    } catch (error) {
+      console.error('✗ Tauri API not working:', error)
+      throw new Error('Tauri API not available. Make sure the app is running in Tauri context.')
+    }
+    
+    const cfg = await readConfig()
+    console.log('Read config:', cfg)
+    
+    if (cfg.lastProjectPath && (await exists(cfg.lastProjectPath))) {
+      console.log('Using existing project path:', cfg.lastProjectPath)
+      currentProjectPath.value = cfg.lastProjectPath
+      return cfg.lastProjectPath
+    }
+    
+    console.log('Creating new default project...')
+    const defPath = await defaultProjectPath()
+    console.log('Default project path:', defPath)
+    
+    if (!(await exists(defPath))) {
+      console.log('Creating new project file:', defPath)
+      await createEmptyFile(defPath)
+    } else {
+      console.log('Default project file already exists:', defPath)
+    }
+    
+    currentProjectPath.value = defPath
+    await writeConfig({ lastProjectPath: defPath })
+    console.log('=== Project initialized successfully ===', defPath)
+    return defPath
+  } catch (error) {
+    console.error('=== Project initialization failed ===', error)
+    throw error
   }
-  
-  const defPath = await defaultProjectPath()
-  console.log('Default project path:', defPath)
-  
-  if (!(await exists(defPath))) {
-    console.log('Creating new project file:', defPath)
-    await createEmptyFile(defPath)
-  }
-  
-  currentProjectPath.value = defPath
-  await writeConfig({ lastProjectPath: defPath })
-  console.log('Project initialized successfully:', defPath)
-  return defPath
 }
 
 export async function newProject(): Promise<string | null> {
