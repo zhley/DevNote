@@ -16,6 +16,24 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "dialog": {
+        "all": true
+      },
+      "fs": {
+        "all": false,
+        "readFile": true,
+        "writeFile": true,
+        "exists": true,
+        "createDir": true,
+        "scope": [
+          "$APPDATA/**",
+          "$APPCONFIG/**",
+          "**/*"
+        ]
+      },
+      "path": {
+        "all": true
       }
     },
     "windows": [
@@ -33,7 +51,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.zl.devnote",
+      "identifier": "devnote",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",

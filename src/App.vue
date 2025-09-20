@@ -8,6 +8,12 @@
 <script setup lang="ts">
 import Workspace from "./components/Workspace.vue";
 import MenuBar from "./components/MenuBar.vue";
+import { onMounted } from 'vue'
+import { initProject } from './api/project'
+
+onMounted(async () => {
+    await initProject()
+})
 </script>
 
 <style scoped>

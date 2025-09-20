@@ -5,8 +5,8 @@
             <div class="menu-item" @click="toggleDropdown('file')" :class="{ active: activeDropdown === 'file' }">
                 <span>项目</span>
                 <div v-if="activeDropdown === 'file'" class="dropdown-menu">
-                    <div class="dropdown-item">新建项目文件</div>
-                    <div class="dropdown-item">打开项目文件</div>
+                    <div class="dropdown-item" @click.stop="handleNewProject">新建项目文件</div>
+                    <div class="dropdown-item" @click.stop="handleOpenProject">打开项目文件</div>
                     <div class="dropdown-item">导出</div>
                     <div class="dropdown-item">属性</div>
                 </div>
@@ -41,6 +41,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { newProject, openProject, getCurrentProjectPath } from '../api/project'
 
 const activeDropdown = ref(null)
 
@@ -69,6 +71,22 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('click', handleGlobalClick)
 })
+
+const handleNewProject = async () => {
+    closeDropdown()
+    const path = await newProject()
+    if (path) {
+        ElMessage.success(`已创建项目: ${path}`)
+    }
+}
+
+const handleOpenProject = async () => {
+    closeDropdown()
+    const path = await openProject()
+    if (path) {
+        ElMessage.success(`已打开项目: ${path}`)
+    }
+}
 </script>
 
 <style scoped>
