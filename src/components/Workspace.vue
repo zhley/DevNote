@@ -472,7 +472,7 @@
     </div>
 </template>
 <script setup>
-import { ref, reactive, nextTick, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, nextTick, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import { Delete, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
@@ -485,6 +485,10 @@ import {
     TodoAPI, BugAPI, IdeaAPI, NoteAPI, ProgressAPI, BlockAPI,
     getDatabase, dailyCleanup 
 } from '../api/database'
+
+// 注入初始化状态
+const isInitialized = inject('isInitialized')
+const initializationError = inject('initializationError')
 
 // 注册mavon-editor组件
 const components = {
@@ -870,7 +874,20 @@ const loadAllData = async () => {
 // 在组件挂载时加载数据
 onMounted(async () => {
     try {
-        console.log('Loading workspace data...')
+        console.log('Workspace mounted, waiting for app initialization...')
+        
+        // 等待应用初始化完成
+        while (!isInitialized.value && !initializationError.value) {
+            await new Promise(resolve => setTimeout(resolve, 50)) // 等待50ms后重试
+        }
+        
+        if (initializationError.value) {
+            console.error('App initialization failed:', initializationError.value)
+            ElMessage.error('应用初始化失败: ' + initializationError.value)
+            return
+        }
+        
+        console.log('App initialized, loading workspace data...')
         // 加载所有数据（数据库已在App.vue中初始化）
         await loadAllData()
         updateTodayProgress()
