@@ -8,7 +8,7 @@ type ProjectConfig = {
 }
 
 const CONFIG_FILE = 'config.json'
-const DEFAULT_DB_NAME = 'default.db'
+const DEFAULT_DB_NAME = 'defaultPrj.db'
 
 export const currentProjectPath = ref<string | null>(null)
 
