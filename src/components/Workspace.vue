@@ -278,7 +278,7 @@
                 <div class="progress-items">
                     <div 
                         v-for="(progress, index) in sortedProgresses" 
-                        :key="progress.date.getTime()"
+                        :key="progress.id || index"
                         class="progress-item"
                     >
                         <div class="progress-header">
@@ -1009,7 +1009,9 @@ const sortedBugs = computed(() => {
 // 项目进度排序计算属性：按日期倒序排列（最新的在前）
 const sortedProgresses = computed(() => {
     return [...progresses].sort((a, b) => {
-        return new Date(b.date) - new Date(a.date)
+        const dateA = a.date instanceof Date ? a.date : new Date(a.date)
+        const dateB = b.date instanceof Date ? b.date : new Date(b.date)
+        return dateB - dateA
     })
 })
 
@@ -1027,9 +1029,11 @@ const updateTodayProgress = async () => {
                     await ProgressAPI.delete(todayProgress.value.id)
                 }
                 // 从本地数组中删除今日进度项
-                const todayIndex = progresses.findIndex(progress => 
-                    new Date(progress.date).toDateString() === new Date(todayProgress.value.date).toDateString()
-                )
+                const todayIndex = progresses.findIndex(progress => {
+                    const progressDate = progress.date instanceof Date ? progress.date : new Date(progress.date)
+                    const todayDate = todayProgress.value.date instanceof Date ? todayProgress.value.date : new Date(todayProgress.value.date)
+                    return progressDate.toDateString() === todayDate.toDateString()
+                })
                 if (todayIndex !== -1) {
                     progresses.splice(todayIndex, 1)
                 }
