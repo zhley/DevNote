@@ -869,8 +869,16 @@ const loadAllData = async () => {
 
 // 在组件挂载时加载数据
 onMounted(async () => {
-    await loadAllData()
-    updateTodayProgress()
+    try {
+        console.log('Loading workspace data...')
+        // 加载所有数据（数据库已在App.vue中初始化）
+        await loadAllData()
+        updateTodayProgress()
+        console.log('Workspace data loaded successfully')
+    } catch (error) {
+        console.error('Failed to load workspace data:', error)
+        ElMessage.error('加载工作区数据失败: ' + error.message)
+    }
 })
 
 // 待办事项排序计算属性：未完成在前，按优先级从高到低，时间倒序

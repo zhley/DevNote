@@ -54,17 +54,28 @@ async function defaultProjectPath(): Promise<string> {
 }
 
 export async function initProject(): Promise<string> {
+  console.log('Initializing project...')
+  
   const cfg = await readConfig()
+  console.log('Read config:', cfg)
+  
   if (cfg.lastProjectPath && (await exists(cfg.lastProjectPath))) {
+    console.log('Using existing project path:', cfg.lastProjectPath)
     currentProjectPath.value = cfg.lastProjectPath
     return cfg.lastProjectPath
   }
+  
   const defPath = await defaultProjectPath()
+  console.log('Default project path:', defPath)
+  
   if (!(await exists(defPath))) {
+    console.log('Creating new project file:', defPath)
     await createEmptyFile(defPath)
   }
+  
   currentProjectPath.value = defPath
   await writeConfig({ lastProjectPath: defPath })
+  console.log('Project initialized successfully:', defPath)
   return defPath
 }
 

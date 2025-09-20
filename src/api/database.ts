@@ -9,9 +9,10 @@ export async function initDatabase() {
   try {
     const projectPath = getCurrentProjectPath()
     if (!projectPath) {
-      throw new Error('No project file selected')
+      throw new Error('No project file selected. Please ensure initProject() is called first.')
     }
     
+    console.log('Connecting to database:', projectPath)
     // 连接到当前项目的数据库文件
     db = await Database.load(`sqlite:${projectPath}`)
     await createTables()
