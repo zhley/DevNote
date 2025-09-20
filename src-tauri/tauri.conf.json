@@ -26,6 +26,9 @@
   "plugins": {
     "sql": {
       "preload": ["sqlite:devnote.db"]
+    },
+    "shell": {
+      "open": true
     }
   },
   "bundle": {

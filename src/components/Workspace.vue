@@ -476,7 +476,7 @@ import { ref, reactive, nextTick, computed, watch, onMounted, onUnmounted } from
 import { Delete, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
-import { open } from '@tauri-apps/api/shell'
+import { open } from '@tauri-apps/plugin-shell'
 import { mavonEditor } from 'mavon-editor'
 import 'mavon-editor/dist/css/index.css'
 
