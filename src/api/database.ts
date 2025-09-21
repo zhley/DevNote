@@ -12,13 +12,12 @@ export async function initDatabase() {
       throw new Error('No project file selected. Please ensure initProject() is called first.')
     }
     
-    console.log('Connecting to database:', projectPath)
     // 连接到当前项目的数据库文件
     db = await Database.load(`sqlite:${projectPath}`)
     await createTables()
     await cleanOldBlocks() // 清理旧的blocks数据
     
-    console.log('Database initialized successfully')
+    console.log('=== Database initialized successfully ===')
     return db
   } catch (error) {
     console.error('Failed to initialize database:', error)

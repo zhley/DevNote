@@ -23,18 +23,13 @@ provide('initializationError', initializationError)
 // 立即开始初始化（不等待mounted）
 const initializeApp = async () => {
     try {
-        console.log('Starting app initialization...')
+        console.log('=== App initialization started ===')
         await initProject()
-        console.log('Project initialized')
-        
         await initDatabase()
-        console.log('Database initialized')
-        
         await dailyCleanup()
-        console.log('Daily cleanup completed')
         
         isInitialized.value = true
-        console.log('App initialization completed successfully')
+        console.log('=== App initialization completed ===')
     } catch (error) {
         console.error('Failed to initialize app:', error)
         initializationError.value = error instanceof Error ? error.message : 'Unknown error'

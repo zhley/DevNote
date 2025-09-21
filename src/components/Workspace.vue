@@ -723,7 +723,6 @@ const handleNoteContentSave = async (value, render) => {
                 temporaryTab.value.lastModified = new Date()
             }
         } catch (error) {
-            console.error('保存笔记失败:', error)
             ElMessage.error('保存笔记失败')
         }
     }
@@ -806,7 +805,6 @@ const handleLinkClick = (event) => {
         
         // 使用Tauri API在系统默认浏览器中打开链接
         open(url).catch((error) => {
-            console.error('Failed to open link:', error)
             ElMessage.error('无法打开链接')
         })
     }
@@ -894,7 +892,6 @@ const loadAllData = async () => {
 
         // 标记数据已加载完成
         isDataLoaded.value = true
-        console.log('Data loaded successfully')
     } catch (error) {
         console.error('Failed to load data:', error)
         ElMessage.error('加载数据失败')
@@ -904,8 +901,6 @@ const loadAllData = async () => {
 // 在组件挂载时加载数据
 onMounted(async () => {
     try {
-        console.log('Workspace mounted, waiting for app initialization...')
-        
         // 等待应用初始化完成
         while (!isInitialized.value && !initializationError.value) {
             await new Promise(resolve => setTimeout(resolve, 50)) // 等待50ms后重试
@@ -917,10 +912,8 @@ onMounted(async () => {
             return
         }
         
-        console.log('App initialized, loading workspace data...')
         // 加载所有数据（数据库已在App.vue中初始化）
         await loadAllData()
-        console.log('Workspace data loaded successfully')
     } catch (error) {
         console.error('Failed to load workspace data:', error)
         ElMessage.error('加载工作区数据失败: ' + error.message)
@@ -1193,7 +1186,6 @@ const toggleBugStatus = async (index) => {
             await BugAPI.update(bug.id, bug)
         }
     } catch (error) {
-        console.error('更新Bug状态失败:', error)
         ElMessage.error('更新Bug状态失败')
     }
 }
@@ -1233,7 +1225,6 @@ const toggleTodo = async (todo) => {
             completed_at: todo.completedAt?.toISOString()
         })
     } catch (error) {
-        console.error('Failed to update todo:', error)
         ElMessage.error('更新失败')
     }
 }
@@ -1324,7 +1315,6 @@ const discardIdea = async (index) => {
         
         ElMessage.success('灵感已废弃')
     } catch (error) {
-        console.error('废弃灵感失败:', error)
         ElMessage.error('废弃灵感失败: ' + error.message)
     }
 }
@@ -1386,7 +1376,6 @@ const addToTodo = async (index) => {
         
         ElMessage.success('已加入待办清单并创建工作区块')
     } catch (error) {
-        console.error('加入待办失败:', error)
         ElMessage.error('加入待办失败: ' + error.message)
     }
 }
@@ -1518,7 +1507,6 @@ const createBlock = async (type, title = '') => {
         
         ElMessage.success(message)
     } catch (error) {
-        console.error('Failed to create block:', error)
         ElMessage.error('创建失败')
     }
 }
@@ -1555,7 +1543,7 @@ const handleBlockBlur = async (index, blockId, event) => {
             }
         }
     } catch (error) {
-        console.error('保存块内容失败:', error)
+        // 静默处理保存错误
     }
 }
 
@@ -1677,7 +1665,6 @@ const handleBlockKeydown = async (event, index) => {
                 
                 ElMessage.success(`${blockType}区域已删除`)
             } catch (error) {
-                console.error('删除块失败:', error)
                 ElMessage.error('删除失败')
             }
         }
@@ -1758,7 +1745,6 @@ const syncBlockToTodo = async (block, blockIndex) => {
             ElMessage.success('已添加到待办清单')
         }
     } catch (error) {
-        console.error('同步待办事项失败:', error)
         ElMessage.error('同步待办事项失败')
     }
 }
@@ -1812,7 +1798,6 @@ const syncBlockToIdea = async (block, blockIndex) => {
             ElMessage.success('已添加到灵感池')
         }
     } catch (error) {
-        console.error('同步灵感失败:', error)
         ElMessage.error('同步灵感失败')
     }
 }
@@ -1872,7 +1857,6 @@ const syncBlockToBug = async (block, blockIndex) => {
             ElMessage.success('已添加到Bug列表')
         }
     } catch (error) {
-        console.error('同步Bug失败:', error)
         ElMessage.error('同步Bug失败')
     }
 }
@@ -1930,7 +1914,6 @@ const syncBlockToNote = async (block, blockIndex) => {
             ElMessage.success('已添加到笔记')
         }
     } catch (error) {
-        console.error('同步笔记失败:', error)
         ElMessage.error('同步笔记失败')
     }
 }
@@ -2009,7 +1992,7 @@ const syncBlockToProgress = async (block, blockIndex) => {
         }
         
     } catch (error) {
-        console.error('更新今日进度失败:', error)
+        ElMessage.error('更新今日进度失败')
     }
 }
 
@@ -2052,8 +2035,6 @@ const focusToBlock = (blockId) => {
                 if (blockContainer) {
                     blockContainer.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 }
-            } else {
-                console.warn('Textarea not found for block:', blockId)
             }
         })
     })
@@ -2093,7 +2074,6 @@ const createBugBlockForBug = async (bug, bugIndex) => {
         
         ElMessage.success('已创建关联的Bug块')
     } catch (error) {
-        console.error('创建Bug块失败:', error)
         ElMessage.error('创建Bug块失败')
     }
 }
