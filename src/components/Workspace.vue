@@ -1632,12 +1632,34 @@ const syncBlockToTodo = async (block, blockIndex) => {
         const lines = block.content.split('\n').filter(line => line.trim())
         if (lines.length === 0) return
         
-        // 第一行作为标题，去掉可能的#前缀或**包裹
+        // 第一行解析标题和优先级，格式为"标题 数字"
         let title = lines[0].trim()
+        let priority = 2 // 默认优先级
+        
+        // 去掉可能的#前缀或**包裹
         if (title.startsWith('#')) {
             title = title.replace(/^#+\s*/, '').trim()
         } else if (title.startsWith('**') && title.endsWith('**')) {
             title = title.replace(/^\*\*|\*\*$/g, '').trim()
+        }
+        
+        // 解析优先级：查找最后一个空格后的数字
+        const lastSpaceIndex = title.lastIndexOf(' ')
+        if (lastSpaceIndex !== -1) {
+            const possiblePriority = title.substring(lastSpaceIndex + 1).trim()
+            const priorityNum = parseInt(possiblePriority)
+            if (!isNaN(priorityNum)) {
+                // 是数字，就近取值到1-3范围
+                if (priorityNum < 1) {
+                    priority = 1
+                } else if (priorityNum > 3) {
+                    priority = 3
+                } else {
+                    priority = priorityNum
+                }
+                // 从标题中移除优先级数字
+                title = title.substring(0, lastSpaceIndex).trim()
+            }
         }
         
         // 第二行开始作为详细内容
@@ -1651,6 +1673,7 @@ const syncBlockToTodo = async (block, blockIndex) => {
                 const existingTodo = todos[existingIndex]
                 existingTodo.title = title
                 existingTodo.content = content
+                existingTodo.priority = priority // 更新优先级
                 
                 // 保存到数据库
                 await TodoAPI.update(existingTodo.id, existingTodo)
@@ -1661,7 +1684,7 @@ const syncBlockToTodo = async (block, blockIndex) => {
             const newTodo = {
                 title: title,
                 content: content,
-                priority: 2, // 默认优先级
+                priority: priority, // 使用解析出的优先级
                 finished: false,
                 created_at: new Date().toISOString()
             }
@@ -1692,6 +1715,8 @@ const syncBlockToIdea = async (block, blockIndex) => {
         let title = lines[0].trim()
         if (title.startsWith('#')) {
             title = title.replace(/^#+\s*/, '').trim()
+        } else if (title.startsWith('**') && title.endsWith('**')) {
+            title = title.replace(/^\*\*|\*\*$/g, '').trim()
         }
         
         // 第二行开始作为详细内容
@@ -1744,6 +1769,8 @@ const syncBlockToBug = async (block, blockIndex) => {
         let title = lines[0].trim()
         if (title.startsWith('#')) {
             title = title.replace(/^#+\s*/, '').trim()
+        } else if (title.startsWith('**') && title.endsWith('**')) {
+            title = title.replace(/^\*\*|\*\*$/g, '').trim()
         }
         
         // 第二行作为描述
@@ -1792,7 +1819,63 @@ const syncBlockToBug = async (block, blockIndex) => {
     }
 }
 
-const syncBlockToNote = async (block, blockIndex) => {}
+const syncBlockToNote = async (block, blockIndex) => {
+    try {
+        const lines = block.content.split('\n').filter(line => line.trim())
+        if (lines.length === 0) return
+        
+        // 第一行作为标题，去掉可能的#前缀
+        let title = lines[0].trim()
+        if (title.startsWith('#')) {
+            title = title.replace(/^#+\s*/, '').trim()
+        } else if (title.startsWith('**') && title.endsWith('**')) {
+            title = title.replace(/^\*\*|\*\*$/g, '').trim()
+        }
+        
+        // 第二行开始作为详细内容
+        const content = lines.slice(1).join('\n').trim()
+        
+        // 检查该block是否已经有关联的笔记
+        if (block.related_id) {
+            // 更新existing note
+            const existingIndex = notes.findIndex(note => note.id === block.related_id)
+            if (existingIndex !== -1) {
+                const existingNote = notes[existingIndex]
+                existingNote.title = title
+                existingNote.content = content
+                existingNote.last_modified = new Date().toISOString()
+                
+                // 保存到数据库
+                await NoteAPI.update(existingNote.id, {
+                    title: title,
+                    content: content
+                })
+                ElMessage.success('笔记已更新')
+            }
+        } else {
+            // 创建新的笔记
+            const newNote = {
+                title: title,
+                content: content,
+                created_at: new Date().toISOString(),
+                last_modified: new Date().toISOString()
+            }
+            
+            // 保存到数据库
+            const savedNote = await NoteAPI.create(newNote)
+            notes.unshift(savedNote)
+            
+            // 更新block的related_id
+            block.related_id = savedNote.id
+            await BlockAPI.update(block.id, { related_id: savedNote.id })
+            
+            ElMessage.success('已添加到笔记')
+        }
+    } catch (error) {
+        console.error('同步笔记失败:', error)
+        ElMessage.error('同步笔记失败')
+    }
+}
 
 const syncBlockToProgress = async (block, blockIndex) => {
     try {
