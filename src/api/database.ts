@@ -314,8 +314,13 @@ export class NoteAPI {
 export class ProgressAPI {
   static async getAll(): Promise<Progress[]> {
     const database = await getDatabase()
-    const results = await database.select('SELECT * FROM progresses ORDER BY date DESC')
-    return results as Progress[]
+    const results = await database.select('SELECT * FROM progresses ORDER BY date DESC') as any[]
+    return results.map(progress => ({
+      ...progress,
+      content: JSON.parse(progress.content),
+      date: new Date(progress.date),
+      createdAt: new Date(progress.created_at)
+    }))
   }
   
   static async createOrUpdate(progressData: { date: Date, content: string[] }): Promise<Progress> {
@@ -338,8 +343,16 @@ export class ProgressAPI {
   
   static async getByDate(date: string): Promise<Progress | null> {
     const database = await getDatabase()
-    const results = await database.select('SELECT * FROM progresses WHERE date = ?', [date]) as Progress[]
-    return results.length > 0 ? results[0] : null
+    const results = await database.select('SELECT * FROM progresses WHERE date = ?', [date]) as any[]
+    if (results.length === 0) return null
+    
+    const progress = results[0]
+    return {
+      ...progress,
+      content: JSON.parse(progress.content),
+      date: new Date(progress.date),
+      createdAt: new Date(progress.created_at)
+    }
   }
   
   static async delete(id: number): Promise<void> {

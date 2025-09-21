@@ -852,12 +852,7 @@ const loadAllData = async () => {
             lastModified: new Date(note.last_modified)
         })))
         
-        progresses.splice(0, progresses.length, ...progressesData.map(progress => ({
-            ...progress,
-            date: new Date(progress.date),
-            content: JSON.parse(progress.content),
-            createdAt: new Date(progress.created_at)
-        })))
+        progresses.splice(0, progresses.length, ...progressesData)
         
         blocks.splice(0, blocks.length, ...blocksData.map(block => ({
             ...block,
@@ -1903,6 +1898,7 @@ const syncBlockToProgress = async (block, blockIndex) => {
         } else {
             // 更新现有的今日进度项
             todayProgress.value.content = savedProgress.content
+            todayProgress.value.date = savedProgress.date
             const existingIndex = progresses.findIndex(p => p.id === savedProgress.id)
             if (existingIndex !== -1) {
                 progresses[existingIndex] = savedProgress
