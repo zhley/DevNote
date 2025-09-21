@@ -525,9 +525,6 @@ const startLeftWidth = ref(0)
 // 侧边栏状态
 const activeTab = ref('todo')
 
-// 今日进度指针（指向progresses中今天的进度那一项）
-const todayProgress = ref(null)
-
 // 当前选中的笔记
 const selectedNote = ref(null)
 
@@ -814,6 +811,9 @@ const ideas = reactive([])
 const notes = reactive([])
 const progresses = reactive([])
 
+// 今日进度指针（指向progresses中今天的进度那一项）
+const todayProgress = ref(null)
+
 // 加载所有数据
 const loadAllData = async () => {
     try {
@@ -890,7 +890,6 @@ onMounted(async () => {
         console.log('App initialized, loading workspace data...')
         // 加载所有数据（数据库已在App.vue中初始化）
         await loadAllData()
-        updateTodayProgress()
         console.log('Workspace data loaded successfully')
     } catch (error) {
         console.error('Failed to load workspace data:', error)
@@ -1014,72 +1013,6 @@ const sortedProgresses = computed(() => {
         return dateB - dateA
     })
 })
-
-// 更新今日进度数据的函数
-const updateTodayProgress = async () => {
-    try {
-        // 查找所有项目进度类型的块
-        const progressBlocks = blocks.filter(block => block.type === 'progress')
-        
-        // 如果没有progress块，删除今日进度项
-        if (progressBlocks.length === 0) {
-            if (todayProgress.value) {
-                // 从数据库删除今日进度项
-                if (todayProgress.value.id) {
-                    await ProgressAPI.delete(todayProgress.value.id)
-                }
-                // 从本地数组中删除今日进度项
-                const todayIndex = progresses.findIndex(progress => {
-                    const progressDate = progress.date instanceof Date ? progress.date : new Date(progress.date)
-                    const todayDate = todayProgress.value.date instanceof Date ? todayProgress.value.date : new Date(todayProgress.value.date)
-                    return progressDate.toDateString() === todayDate.toDateString()
-                })
-                if (todayIndex !== -1) {
-                    progresses.splice(todayIndex, 1)
-                }
-                // 清空今日进度指针
-                todayProgress.value = null
-            }
-            return
-        }
-        
-        // 简单解析：一行对应一项
-        const newContent = []
-        progressBlocks.forEach(block => {
-            const content = block.content.trim()
-            if (!content) return
-            
-            const lines = content.split('\n').filter(line => line.trim())
-            newContent.push(...lines)
-        })
-        
-        const today = new Date()
-        const progressData = {
-            date: today,
-            content: newContent
-        }
-        
-        // 使用数据库保存或更新今日进度
-        const savedProgress = await ProgressAPI.createOrUpdate(progressData)
-        
-        // 更新本地状态
-        if (!todayProgress.value) {
-            // 如果没有今日进度指针，创建并添加到数组开头
-            progresses.unshift(savedProgress)
-            todayProgress.value = savedProgress
-        } else {
-            // 更新现有的今日进度项
-            todayProgress.value.content = savedProgress.content
-            const existingIndex = progresses.findIndex(p => p.id === savedProgress.id)
-            if (existingIndex !== -1) {
-                progresses[existingIndex] = savedProgress
-            }
-        }
-        
-    } catch (error) {
-        console.error('更新今日进度失败:', error)
-    }
-}
 
 // Bug悬浮卡片状态管理
 const showBugDetailCard = ref(false)
@@ -1605,6 +1538,10 @@ const handleBlockBlur = async (index, blockId, event) => {
                 await syncBlockToIdea(block, index)
             } else if (block.type === 'bug') {
                 await syncBlockToBug(block, index)
+            } else if (block.type === 'note') {
+                await syncBlockToNote(block, index)
+            } else if (block.type === 'progress') {
+                await syncBlockToProgress(block, index)
             }
         }
     } catch (error) {
@@ -1661,24 +1598,6 @@ const handleBlockKeydown = async (event, index) => {
         // 退出编辑模式 - v-model已自动同步内容
         const block = blocks[index]
         editingBlockId.value = null
-        
-        // 保存块内容到数据库
-        try {
-            if (block.id) {
-                await BlockAPI.update(block.id, block)
-            }
-        } catch (error) {
-            console.error('保存块内容失败:', error)
-        }
-        
-        // 如果是待办或灵感类型的块，且有内容，则同步到对应的列表
-        if (block.content.trim()) {
-            if (block.type === 'todo') {
-                await syncBlockToTodo(block, index)
-            } else if (block.type === 'idea') {
-                await syncBlockToIdea(block, index)
-            }
-        }
         
         // 移除焦点
         event.target.blur()
@@ -1928,6 +1847,73 @@ const syncBlockToBug = async (block, blockIndex) => {
     }
 }
 
+const syncBlockToNote = async (block, blockIndex) => {}
+
+const syncBlockToProgress = async (block, blockIndex) => {
+    try {
+        // 查找所有项目进度类型的块
+        const progressBlocks = blocks.filter(block => block.type === 'progress')
+        
+        // 如果没有progress块，删除今日进度项
+        if (progressBlocks.length === 0) {
+            if (todayProgress.value) {
+                // 从数据库删除今日进度项
+                if (todayProgress.value.id) {
+                    await ProgressAPI.delete(todayProgress.value.id)
+                }
+                // 从本地数组中删除今日进度项
+                const todayIndex = progresses.findIndex(progress => {
+                    const progressDate = progress.date instanceof Date ? progress.date : new Date(progress.date)
+                    const todayDate = todayProgress.value.date instanceof Date ? todayProgress.value.date : new Date(todayProgress.value.date)
+                    return progressDate.toDateString() === todayDate.toDateString()
+                })
+                if (todayIndex !== -1) {
+                    progresses.splice(todayIndex, 1)
+                }
+                // 清空今日进度指针
+                todayProgress.value = null
+            }
+            return
+        }
+        
+        // 简单解析：一行对应一项
+        const newContent = []
+        progressBlocks.forEach(block => {
+            const content = block.content.trim()
+            if (!content) return
+            
+            const lines = content.split('\n').filter(line => line.trim())
+            newContent.push(...lines)
+        })
+        
+        const today = new Date()
+        const progressData = {
+            date: today,
+            content: newContent
+        }
+        
+        // 使用数据库保存或更新今日进度
+        const savedProgress = await ProgressAPI.createOrUpdate(progressData)
+        
+        // 更新本地状态
+        if (!todayProgress.value) {
+            // 如果没有今日进度指针，创建并添加到数组开头
+            progresses.unshift(savedProgress)
+            todayProgress.value = savedProgress
+        } else {
+            // 更新现有的今日进度项
+            todayProgress.value.content = savedProgress.content
+            const existingIndex = progresses.findIndex(p => p.id === savedProgress.id)
+            if (existingIndex !== -1) {
+                progresses[existingIndex] = savedProgress
+            }
+        }
+        
+    } catch (error) {
+        console.error('更新今日进度失败:', error)
+    }
+}
+
 // 编辑Bug函数
 const editBug = (bug, bugIndex) => {
     // 检查是否存在关联的工作区块
@@ -2033,17 +2019,6 @@ const handleDateChange = (date) => {
     showDatePicker.value = false
     ElMessage.success(`日期已切换到 ${formatCurrentDate()}`)
 }
-
-
-
-// 监听blocks变化，当有progress类型的block发生变化时重新更新今日进度
-watch(
-    () => blocks.filter(block => block.type === 'progress'),
-    () => {
-        updateTodayProgress()
-    },
-    { deep: true }
-)
 
 // 组件挂载时初始化
 onMounted(() => {
