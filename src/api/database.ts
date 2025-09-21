@@ -48,9 +48,7 @@ async function createTables() {
       finished BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       completed_at DATETIME,
-      block_id TEXT,
-      idea_id TEXT,
-      idea_content TEXT
+      idea_id TEXT
     )
   `)
 
@@ -60,7 +58,6 @@ async function createTables() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       description TEXT DEFAULT '',
-      severity INTEGER DEFAULT 2,
       fixed BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       completed_at DATETIME,
@@ -106,7 +103,7 @@ async function createTables() {
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
       content TEXT DEFAULT '',
-      priority INTEGER,
+      related_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `)
@@ -134,8 +131,8 @@ export class TodoAPI {
   static async create(todo: Omit<Todo, 'id'>): Promise<Todo> {
     const database = await getDatabase()
     const result = await database.execute(
-      'INSERT INTO todos (title, content, priority, finished, block_id, idea_id, idea_content) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [todo.title, todo.content || '', todo.priority || 2, todo.finished ? 1 : 0, todo.block_id, todo.idea_id, todo.idea_content]
+      'INSERT INTO todos (title, content, priority, finished, idea_id) VALUES (?, ?, ?, ?, ?)',
+      [todo.title, todo.content || '', todo.priority || 2, todo.finished ? 1 : 0, todo.idea_id]
     )
     const id = result.lastInsertId
     if (id === undefined) {
@@ -181,8 +178,8 @@ export class BugAPI {
   static async create(bug: Omit<Bug, 'id'>): Promise<Bug> {
     const database = await getDatabase()
     const result = await database.execute(
-      'INSERT INTO bugs (title, description, severity, fixed, additional_info) VALUES (?, ?, ?, ?, ?)',
-      [bug.title, bug.description || '', bug.severity || 2, bug.fixed ? 1 : 0, bug.additional_info]
+      'INSERT INTO bugs (title, description, fixed, additional_info) VALUES (?, ?, ?, ?)',
+      [bug.title, bug.description || '', bug.fixed ? 1 : 0, bug.additional_info]
     )
     const id = result.lastInsertId
     if (id === undefined) {
@@ -198,7 +195,6 @@ export class BugAPI {
     
     if (bug.title !== undefined) { fields.push('title = ?'); values.push(bug.title) }
     if (bug.description !== undefined) { fields.push('description = ?'); values.push(bug.description) }
-    if (bug.severity !== undefined) { fields.push('severity = ?'); values.push(bug.severity) }
     if (bug.fixed !== undefined) { fields.push('fixed = ?'); values.push(bug.fixed ? 1 : 0) }
     if (bug.completed_at !== undefined) { fields.push('completed_at = ?'); values.push(bug.completed_at) }
     if (bug.additional_info !== undefined) { fields.push('additional_info = ?'); values.push(bug.additional_info) }
@@ -376,8 +372,8 @@ export class BlockAPI {
   static async create(block: Block): Promise<Block> {
     const database = await getDatabase()
     await database.execute(
-      'INSERT INTO blocks (id, type, content, priority) VALUES (?, ?, ?, ?)',
-      [block.id, block.type, block.content, block.priority]
+      'INSERT INTO blocks (id, type, content, related_id) VALUES (?, ?, ?, ?)',
+      [block.id, block.type, block.content, block.related_id]
     )
     return block
   }
@@ -388,7 +384,7 @@ export class BlockAPI {
     const values = []
     
     if (blockData.content !== undefined) { fields.push('content = ?'); values.push(blockData.content) }
-    if (blockData.priority !== undefined) { fields.push('priority = ?'); values.push(blockData.priority) }
+    if (blockData.related_id !== undefined) { fields.push('related_id = ?'); values.push(blockData.related_id) }
     
     if (fields.length > 0) {
       values.push(id)

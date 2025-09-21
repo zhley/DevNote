@@ -7,16 +7,13 @@ export interface Todo {
   finished: boolean
   created_at: string
   completed_at?: string
-  block_id?: string
   idea_id?: string
-  idea_content?: string
 }
 
 export interface Bug {
   id?: number
   title: string
   description: string
-  severity: number // 1-3
   fixed: boolean
   created_at: string
   completed_at?: string
@@ -50,6 +47,6 @@ export interface Block {
   id: string
   type: 'todo' | 'bug' | 'idea' | 'note' | 'progress'
   content: string
-  priority?: number
+  related_id?: number
   created_at: string
 }

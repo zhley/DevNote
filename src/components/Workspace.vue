@@ -1382,11 +1382,8 @@ const handleCommand = () => {
         }
         const type = typeMap[command]
         
-        // 解析参数
-        let title = ''
-        let priority = 2 // 默认优先级为中等
-        
         // 解析标题参数（所有命令都支持）
+        let title = ''
         const titleIndex = parts.findIndex(part => !part.startsWith('-') && part !== command)
         if (titleIndex !== -1) {
             // 提取标题，可能包含多个单词
@@ -1398,18 +1395,7 @@ const handleCommand = () => {
             title = titleParts.join(' ')
         }
         
-        // 解析优先级参数（仅对 /t 命令有效）
-        if (command === '/t') {
-            const priorityIndex = parts.findIndex(part => part === '-p')
-            if (priorityIndex !== -1 && priorityIndex + 1 < parts.length) {
-                const priorityValue = parseInt(parts[priorityIndex + 1])
-                if (!isNaN(priorityValue) && priorityValue >= 1 && priorityValue <= 3) {
-                    priority = priorityValue
-                }
-            }
-        }
-        
-        createBlock(type, title, priority)
+        createBlock(type, title)
         commandInput.value = ''
     } else if (input.startsWith('/')) {
         ElMessage.warning('无效命令，请使用 /p, /t, /b, /i, /n')
@@ -1417,7 +1403,7 @@ const handleCommand = () => {
 }
 
 // 创建新区域
-const createBlock = async (type, title = '', priority = 2) => {
+const createBlock = async (type, title = '') => {
     try {
         let content = ''
         if (title) {
@@ -1435,11 +1421,6 @@ const createBlock = async (type, title = '', priority = 2) => {
             type: type,
             content: content,
             created_at: new Date().toISOString()
-        }
-        
-        // 为待办事项类型添加优先级属性
-        if (type === 'todo') {
-            newBlock.priority = priority
         }
         
         // 保存到数据库
@@ -1472,10 +1453,6 @@ const createBlock = async (type, title = '', priority = 2) => {
         let message = `${getBlockTypeLabel(type)}区域已创建`
         if (title) {
             message += `：${title}`
-        }
-        if (type === 'todo' && priority !== 2) {
-            const priorityText = getPriorityText(priority)
-            message += ` (优先级：${priorityText})`
         }
         
         ElMessage.success(message)
@@ -1666,46 +1643,37 @@ const syncBlockToTodo = async (block, blockIndex) => {
         // 第二行开始作为详细内容
         const content = lines.slice(1).join('\n').trim()
         
-        // 获取优先级（如果块有优先级属性）
-        const priority = block.priority || 2
-        
-        // 检查是否已存在相同blockId的待办事项
-        const existingIndex = todos.findIndex(todo => todo.blockId === block.id)
-        if (existingIndex !== -1) {
+        // 检查该block是否已经有关联的待办事项
+        if (block.related_id) {
             // 更新existing todo
-            const existingTodo = todos[existingIndex]
-            existingTodo.title = title
-            
-            // 如果是从灵感创建的待办，将工作区内容追加到原有内容
-            if (existingTodo.ideaId && content) {
+            const existingIndex = todos.findIndex(todo => todo.id === block.related_id)
+            if (existingIndex !== -1) {
+                const existingTodo = todos[existingIndex]
+                existingTodo.title = title
                 existingTodo.content = content
-            } else {
-                existingTodo.content = content
-            }
-            
-            existingTodo.priority = priority
-            
-            // 保存到数据库
-            if (existingTodo.id) {
+                
+                // 保存到数据库
                 await TodoAPI.update(existingTodo.id, existingTodo)
+                ElMessage.success('待办事项已更新')
             }
-            
-            ElMessage.success('待办事项已更新')
         } else {
             // 创建新的待办事项
             const newTodo = {
                 title: title,
                 content: content,
-                priority: priority,
+                priority: 2, // 默认优先级
                 finished: false,
-                createdAt: new Date(),
-                completedAt: null,
-                blockId: block.id // 关联到原始块
+                created_at: new Date().toISOString()
             }
             
             // 保存到数据库
             const savedTodo = await TodoAPI.create(newTodo)
             todos.unshift(savedTodo)
+            
+            // 更新block的related_id
+            block.related_id = savedTodo.id
+            await BlockAPI.update(block.id, { related_id: savedTodo.id })
+            
             ElMessage.success('已添加到待办清单')
         }
     } catch (error) {
@@ -1729,32 +1697,35 @@ const syncBlockToIdea = async (block, blockIndex) => {
         // 第二行开始作为详细内容
         const content = lines.slice(1).join('\n').trim()
         
-        // 检查是否已存在相同blockId的灵感
-        const existingIndex = ideas.findIndex(idea => idea.blockId === block.id)
-        if (existingIndex !== -1) {
+        // 检查该block是否已经有关联的灵感
+        if (block.related_id) {
             // 更新existing idea
-            ideas[existingIndex].title = title
-            ideas[existingIndex].content = content
-            
-            // 保存到数据库
-            if (ideas[existingIndex].id) {
+            const existingIndex = ideas.findIndex(idea => idea.id === block.related_id)
+            if (existingIndex !== -1) {
+                ideas[existingIndex].title = title
+                ideas[existingIndex].content = content
+                
+                // 保存到数据库
                 await IdeaAPI.update(ideas[existingIndex].id, ideas[existingIndex])
+                ElMessage.success('灵感已更新')
             }
-            
-            ElMessage.success('灵感已更新')
         } else {
             // 创建新的灵感
             const newIdea = {
                 title: title,
                 content: content,
-                createdAt: new Date(),
-                status: 'pending',
-                blockId: block.id // 关联到原始块
+                status: 'active',
+                created_at: new Date().toISOString()
             }
             
             // 保存到数据库
             const savedIdea = await IdeaAPI.create(newIdea)
             ideas.unshift(savedIdea)
+            
+            // 更新block的related_id
+            block.related_id = savedIdea.id
+            await BlockAPI.update(block.id, { related_id: savedIdea.id })
+            
             ElMessage.success('已添加到灵感池')
         }
     } catch (error) {
@@ -1781,36 +1752,38 @@ const syncBlockToBug = async (block, blockIndex) => {
         // 第三行开始作为追加信息
         const additionalInfo = lines.length > 2 ? lines.slice(2).join('\n').trim() : ''
         
-        // 检查是否已存在相同blockId的Bug
-        const existingIndex = bugs.findIndex(bug => bug.blockId === block.id)
-        if (existingIndex !== -1) {
+        // 检查该block是否已经有关联的Bug
+        if (block.related_id) {
             // 更新existing bug
-            const existingBug = bugs[existingIndex]
-            existingBug.title = title
-            existingBug.description = description
-            existingBug.additionalInfo = additionalInfo
-            
-            // 保存到数据库
-            if (existingBug.id) {
+            const existingIndex = bugs.findIndex(bug => bug.id === block.related_id)
+            if (existingIndex !== -1) {
+                const existingBug = bugs[existingIndex]
+                existingBug.title = title
+                existingBug.description = description
+                existingBug.additional_info = additionalInfo
+                
+                // 保存到数据库
                 await BugAPI.update(existingBug.id, existingBug)
+                ElMessage.success('Bug信息已更新')
             }
-            
-            ElMessage.success('Bug信息已更新')
         } else {
             // 创建新的Bug
             const newBug = {
                 title: title,
                 description: description,
-                additionalInfo: additionalInfo,
+                additional_info: additionalInfo,
                 fixed: false,
-                createdAt: new Date(),
-                completedAt: null,
-                blockId: block.id // 关联到原始块
+                created_at: new Date().toISOString()
             }
             
             // 保存到数据库
             const savedBug = await BugAPI.create(newBug)
             bugs.unshift(savedBug)
+            
+            // 更新block的related_id
+            block.related_id = savedBug.id
+            await BlockAPI.update(block.id, { related_id: savedBug.id })
+            
             ElMessage.success('已添加到Bug列表')
         }
     } catch (error) {
