@@ -679,23 +679,51 @@ const closeTemporaryTab = () => {
 }
 
 // 处理笔记内容变化
-const handleNoteContentSave = (value, render) => {
+const handleNoteContentSave = async (value, render) => {
     if (activeNoteTab.value) {
-        // 更新当前活动标签的内容
-        activeNoteTab.value.content = value
-        activeNoteTab.value.lastModified = new Date()
-        
-        // 同步更新到notes数组中
-        const noteInArray = notes.find(note => note.title === activeNoteTab.value.title)
-        if (noteInArray) {
-            noteInArray.content = value
-            noteInArray.lastModified = new Date()
-        }
-        
-        // 同步更新到临时标签中（如果当前是临时标签）
-        if (temporaryTab.value && temporaryTab.value.title === activeNoteTab.value.title) {
-            temporaryTab.value.content = value
-            temporaryTab.value.lastModified = new Date()
+        try {
+            // 更新当前活动标签的内容
+            activeNoteTab.value.content = value
+            activeNoteTab.value.lastModified = new Date()
+            
+            // 同步更新到notes数组中
+            const noteInArray = notes.find(note => note.title === activeNoteTab.value.title)
+            if (noteInArray) {
+                noteInArray.content = value
+                noteInArray.lastModified = new Date()
+                
+                // 同步到数据库
+                await NoteAPI.update(noteInArray.id, {
+                    title: noteInArray.title,
+                    content: value
+                })
+                
+                // 查找关联的block（通过related_id关联）
+                const relatedBlock = blocks.find(block => 
+                    block.type === 'note' && block.related_id === noteInArray.id
+                )
+                
+                if (relatedBlock) {
+                    // 如果有关联的block，同步更新block内容
+                    // 将笔记内容转换为block格式：第一行为标题，第二行开始为内容
+                    const blockContent = `${noteInArray.title}\n${value}`
+                    relatedBlock.content = blockContent
+                    
+                    // 同步block到数据库
+                    await BlockAPI.update(relatedBlock.id, { content: blockContent })
+                }
+                
+                ElMessage.success('笔记已保存')
+            }
+            
+            // 同步更新到临时标签中（如果当前是临时标签）
+            if (temporaryTab.value && temporaryTab.value.title === activeNoteTab.value.title) {
+                temporaryTab.value.content = value
+                temporaryTab.value.lastModified = new Date()
+            }
+        } catch (error) {
+            console.error('保存笔记失败:', error)
+            ElMessage.error('保存笔记失败')
         }
     }
 }
