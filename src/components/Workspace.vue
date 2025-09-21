@@ -1318,8 +1318,7 @@ const addToTodo = (index) => {
     const newBlock = {
         id: generateId(),
         type: 'todo',
-        content: `**${idea.title}**\n`,
-        priority: 2  // todo类型才有优先级字段
+        content: `**${idea.title}**\n`
     }
     
     // 创建对应的待办事项
@@ -1331,7 +1330,6 @@ const addToTodo = (index) => {
         createdAt: new Date(),
         completedAt: null,
         idea_id: idea.id, // 关联灵感ID，用于状态同步
-        ideaContent: idea.content // 存储灵感内容用于悬浮显示
     }
     
     // 添加到数组
