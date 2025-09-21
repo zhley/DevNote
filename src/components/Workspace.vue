@@ -34,16 +34,6 @@
             </div>
             <div 
                 class="toolbar-item"
-                :class="{ active: activeTab === 'notes' }"
-                @click="setActiveTab('notes')"
-                title="笔记"
-            >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                </svg>
-            </div>
-            <div 
-                class="toolbar-item"
                 :class="{ active: activeTab === 'progress' }"
                 @click="setActiveTab('progress')"
                 title="项目进度"
@@ -52,6 +42,17 @@
                     <path d="M13,2.05V5.08C16.39,5.57 19,8.47 19,12C19,12.9 18.82,13.75 18.5,14.54L21.12,16.07C21.68,14.83 22,13.45 22,12C22,6.82 18.05,2.55 13,2.05M12,19C8.13,19 5,15.87 5,12C5,8.47 7.61,5.57 11,5.08V2.05C5.95,2.55 2,6.82 2,12C2,17.52 6.48,22 12,22C13.45,22 14.83,21.68 16.07,21.12L14.54,18.5C13.75,18.82 12.9,19 12,19M12,6A6,6 0 0,0 6,12C6,15.31 8.69,18 12,18C12.75,18 13.47,17.85 14.14,17.58L12,15.45V6Z"/>
                 </svg>
             </div>
+            <div 
+                class="toolbar-item"
+                :class="{ active: activeTab === 'notes' }"
+                @click="setActiveTab('notes')"
+                title="笔记"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+            </div>
+            
         </div>
 
         <!-- 左侧内容区域 -->
@@ -250,26 +251,6 @@
                 </div>
             </div>
 
-            <!-- 笔记列表区域 -->
-            <div v-if="activeTab === 'notes'" class="notes-list">
-                <div class="section-header">
-                    <h3>笔记</h3>
-                </div>
-                <div class="note-items">
-                    <div 
-                        v-for="(note, index) in notes" 
-                        :key="index"
-                        class="note-item"
-                        :class="{ 'selected': selectedNote === note }"
-                        @click="selectNoteTemp(note)"
-                        @dblclick="selectNotePermanent(note)"
-                    >
-                        <span class="note-title">{{ note.title }}</span>
-                        <span class="note-date">{{ formatDate(note.lastModified) }}</span>
-                    </div>
-                </div>
-            </div>
-
             <!-- 项目进度区域 -->
             <div v-if="activeTab === 'progress'" class="progress-list">
                 <div class="section-header">
@@ -295,6 +276,26 @@
                                 <span class="task-text">{{ item }}</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 笔记列表区域 -->
+            <div v-if="activeTab === 'notes'" class="notes-list">
+                <div class="section-header">
+                    <h3>笔记</h3>
+                </div>
+                <div class="note-items">
+                    <div 
+                        v-for="(note, index) in notes" 
+                        :key="index"
+                        class="note-item"
+                        :class="{ 'selected': selectedNote === note }"
+                        @click="selectNoteTemp(note)"
+                        @dblclick="selectNotePermanent(note)"
+                    >
+                        <span class="note-title">{{ note.title }}</span>
+                        <span class="note-date">{{ formatDate(note.lastModified) }}</span>
                     </div>
                 </div>
             </div>
@@ -1407,11 +1408,10 @@ const createBlock = async (type, title = '') => {
     try {
         let content = ''
         if (title) {
-            // 对待办事项使用加粗格式，其他类型使用一级标题
-            if (type === 'todo') {
-                content = `**${title}**`
+            if (type === 'progress') {
+                content = `${title}`
             } else {
-                content = `# ${title}`
+                content = `**${title}**`
             }
         }
         
