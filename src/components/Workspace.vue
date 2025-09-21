@@ -102,13 +102,13 @@
                                 </el-tag>
                                 <!-- 灵感链接 -->
                                 <div 
-                                    v-if="todo.ideaId" 
+                                    v-if="todo.idea_id" 
                                     class="idea-link"
-                                    @click="toggleIdeaTooltip(todo.ideaId)"
-                                    @mouseenter="handleIdeaMouseEnter(todo.ideaId)"
-                                    @mouseleave="handleIdeaMouseLeave(todo.ideaId)"
+                                    @click="toggleIdeaTooltip(todo.idea_id)"
+                                    @mouseenter="handleIdeaMouseEnter(todo.idea_id)"
+                                    @mouseleave="handleIdeaMouseLeave(todo.idea_id)"
                                     tabindex="0"
-                                    @blur="hideIdeaTooltip(todo.ideaId)"
+                                    @blur="hideIdeaTooltip(todo.idea_id)"
                                 >
                                     <el-icon class="idea-icon">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -119,12 +119,12 @@
                                     
                                     <!-- 悬浮卡片 -->
                                     <div 
-                                        v-if="activeIdeaTooltip === todo.ideaId" 
+                                        v-if="activeIdeaTooltip === todo.idea_id" 
                                         class="idea-tooltip"
                                         @click.stop
                                     >
                                         <div class="tooltip-header">
-                                            <h5>{{ todo.ideaId }}</h5>
+                                            <h5>{{ getIdeaTitleById(todo.idea_id) }}</h5>
                                         </div>
                                         <div class="tooltip-content">
                                             {{ todo.ideaContent }}
@@ -1200,8 +1200,8 @@ const toggleTodo = async (todo) => {
             ElMessage.success('任务已完成！')
             
             // 如果有关联的灵感，将灵感状态改为已实施
-            if (todo.ideaId) {
-                const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+            if (todo.idea_id) {
+                const ideaIndex = ideas.findIndex(idea => idea.id === todo.idea_id)
                 if (ideaIndex !== -1) {
                     ideas[ideaIndex].status = 'implemented'
                     await IdeaAPI.update(ideas[ideaIndex].id, { status: 'implemented' })
@@ -1212,8 +1212,8 @@ const toggleTodo = async (todo) => {
             ElMessage.success('任务已标记为未完成')
             
             // 如果有关联的灵感，将灵感状态改为待办中
-            if (todo.ideaId) {
-                const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+            if (todo.idea_id) {
+                const ideaIndex = ideas.findIndex(idea => idea.id === todo.idea_id)
                 if (ideaIndex !== -1) {
                     ideas[ideaIndex].status = 'in-progress'
                     await IdeaAPI.update(ideas[ideaIndex].id, { status: 'in-progress' })
@@ -1288,6 +1288,12 @@ const getPriorityText = (priority) => {
     return textMap[priority] || '中'
 }
 
+// 根据灵感ID获取灵感标题
+const getIdeaTitleById = (ideaId) => {
+    const idea = ideas.find(idea => idea.id === ideaId)
+    return idea ? idea.title : '未知灵感'
+}
+
 // 废弃灵感
 const discardIdea = (index) => {
     ideas[index].status = 'discarded'
@@ -1324,8 +1330,7 @@ const addToTodo = (index) => {
         finished: false,
         createdAt: new Date(),
         completedAt: null,
-        blockId: newBlock.id,
-        ideaId: idea.title, // 关联灵感ID，用于悬浮卡片
+        idea_id: idea.id, // 关联灵感ID，用于状态同步
         ideaContent: idea.content // 存储灵感内容用于悬浮显示
     }
     
@@ -1594,14 +1599,15 @@ const handleBlockKeydown = async (event, index) => {
                 const blockType = getBlockTypeLabel(block.type)
                 
                 // 删除关联的待办事项、灵感或Bug（工作区 → 列表同步）
-                if (block.type === 'todo' && block.id) {
-                    const todoIndex = todos.findIndex(todo => todo.blockId === block.id)
+                if (block.type === 'todo' && block.related_id) {
+                    // 通过related_id找到对应的todo
+                    const todoIndex = todos.findIndex(todo => todo.id === block.related_id)
                     if (todoIndex !== -1) {
                         const todo = todos[todoIndex]
                         
                         // 如果待办项关联了灵感，将灵感状态改为待验证
-                        if (todo.ideaId) {
-                            const ideaIndex = ideas.findIndex(idea => idea.title === todo.ideaId)
+                        if (todo.idea_id) {
+                            const ideaIndex = ideas.findIndex(idea => idea.id === todo.idea_id)
                             if (ideaIndex !== -1) {
                                 ideas[ideaIndex].status = 'pending'
                                 if (ideas[ideaIndex].id) {
@@ -1611,27 +1617,23 @@ const handleBlockKeydown = async (event, index) => {
                         }
                         
                         // 从数据库删除todo
-                        if (todo.id) {
-                            await TodoAPI.delete(todo.id)
-                        }
+                        await TodoAPI.delete(todo.id)
                         todos.splice(todoIndex, 1)
                     }
-                } else if (block.type === 'idea' && block.id) {
-                    const ideaIndex = ideas.findIndex(idea => idea.blockId === block.id)
+                } else if (block.type === 'idea' && block.related_id) {
+                    // 通过related_id找到对应的idea
+                    const ideaIndex = ideas.findIndex(idea => idea.id === block.related_id)
                     if (ideaIndex !== -1) {
                         const idea = ideas[ideaIndex]
-                        if (idea.id) {
-                            await IdeaAPI.delete(idea.id)
-                        }
+                        await IdeaAPI.delete(idea.id)
                         ideas.splice(ideaIndex, 1)
                     }
-                } else if (block.type === 'bug' && block.id) {
-                    const bugIndex = bugs.findIndex(bug => bug.blockId === block.id)
+                } else if (block.type === 'bug' && block.related_id) {
+                    // 通过related_id找到对应的bug
+                    const bugIndex = bugs.findIndex(bug => bug.id === block.related_id)
                     if (bugIndex !== -1) {
                         const bug = bugs[bugIndex]
-                        if (bug.id) {
-                            await BugAPI.delete(bug.id)
-                        }
+                        await BugAPI.delete(bug.id)
                         bugs.splice(bugIndex, 1)
                     }
                 }
