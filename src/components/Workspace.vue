@@ -1487,30 +1487,7 @@ const createBlock = async (type, title = '', priority = 2) => {
 
 // 处理区域获得焦点
 const handleBlockFocus = (blockId) => {
-    editingBlockId.value = blockId
-    
-    // 等待DOM更新后聚焦
-    nextTick(() => {
-        const blockElement = blockRefs.get(blockId)
-        if (blockElement) {
-            // 找到对应的block数据
-            const block = blocks.find(b => b.id === blockId)
-            if (block) {
-                // 设置原始文本内容，保持换行符
-                blockElement.textContent = block.content
-            }
-            
-            blockElement.focus()
-            
-            // 设置光标到末尾
-            const range = document.createRange()
-            const selection = window.getSelection()
-            range.selectNodeContents(blockElement)
-            range.collapse(false) // 折叠到末尾
-            selection.removeAllRanges()
-            selection.addRange(range)
-        }
-    })
+    focusToBlock(blockId)
 }
 
 // 处理区域失去焦点
@@ -1942,32 +1919,27 @@ const focusToBlock = (blockId) => {
     editingBlockId.value = blockId
     
     nextTick(() => {
-        // 使用blockRefs来获取编辑中的元素
-        const blockElement = blockRefs.get(blockId)
-        if (blockElement) {
-            // 找到对应的block数据
-            const block = blocks.find(b => b.id === blockId)
-            if (block) {
-                // 设置原始文本内容，保持换行符
-                blockElement.textContent = block.content
+        // 等待DOM更新后，再次使用nextTick确保textarea已经渲染
+        nextTick(() => {
+            // 直接通过querySelector查找textarea元素，更可靠
+            const textarea = document.querySelector(`[data-block-id="${blockId}"] textarea`)
+            if (textarea) {
+                // 聚焦到textarea
+                textarea.focus()
+                
+                // 设置光标到文本末尾
+                const textLength = textarea.value.length
+                textarea.setSelectionRange(textLength, textLength)
+                
+                // 滚动到视窗
+                const blockContainer = document.querySelector(`[data-block-id="${blockId}"]`)
+                if (blockContainer) {
+                    blockContainer.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
+            } else {
+                console.warn('Textarea not found for block:', blockId)
             }
-            
-            blockElement.focus()
-            
-            // 设置光标到末尾
-            const range = document.createRange()
-            const selection = window.getSelection()
-            range.selectNodeContents(blockElement)
-            range.collapse(false)
-            selection.removeAllRanges()
-            selection.addRange(range)
-            
-            // 滚动到视窗
-            const blockContainer = document.querySelector(`[data-block-id="${blockId}"]`)
-            if (blockContainer) {
-                blockContainer.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }
-        }
+        })
     })
 }
 
