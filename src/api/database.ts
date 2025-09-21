@@ -48,7 +48,7 @@ async function createTables() {
       finished BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       completed_at DATETIME,
-      idea_id TEXT
+      idea_id INTEGER
     )
   `)
 
