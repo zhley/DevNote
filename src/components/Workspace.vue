@@ -127,7 +127,7 @@
                                             <h5>{{ getIdeaTitleById(todo.idea_id) }}</h5>
                                         </div>
                                         <div class="tooltip-content">
-                                            {{getIdeaContentById(todo.idea_id)}}
+                                            {{ getIdeaContentById(todo.idea_id) }}
                                         </div>
                                     </div>
                                 </div>
@@ -841,6 +841,9 @@ const ideas = reactive([])
 const notes = reactive([])
 const progresses = reactive([])
 
+// 数据加载状态
+const isDataLoaded = ref(false)
+
 // 今日进度指针（指向progresses中今天的进度那一项）
 const todayProgress = ref(null)
 
@@ -888,7 +891,9 @@ const loadAllData = async () => {
             ...block,
             createdAt: new Date(block.created_at)
         })))
-        
+
+        // 标记数据已加载完成
+        isDataLoaded.value = true
         console.log('Data loaded successfully')
     } catch (error) {
         console.error('Failed to load data:', error)
@@ -1289,16 +1294,24 @@ const getPriorityText = (priority) => {
     return textMap[priority] || '中'
 }
 
-// 根据灵感ID获取灵感标题
-const getIdeaTitleById = (ideaId) => {
-    const idea = ideas.find(idea => idea.id === ideaId)
-    return idea ? idea.title : '未知灵感'
-}
+// 根据灵感ID获取灵感标题 - 使用计算属性确保响应性
+const getIdeaTitleById = computed(() => {
+    return (ideaId) => {
+        if (!ideaId) return '未知灵感'
+        if (!isDataLoaded.value) return '加载中...'
+        const idea = ideas.find(idea => idea.id === ideaId)
+        return idea ? idea.title : '未知灵感'
+    }
+})
 
-const getIdeaContentById = (ideaId) => {
-    const idea = ideas.find(idea => idea.id === ideaId)
-    return idea ? idea.content : ''
-}
+const getIdeaContentById = computed(() => {
+    return (ideaId) => {
+        if (!ideaId) return ''
+        if (!isDataLoaded.value) return '数据加载中...'
+        const idea = ideas.find(idea => idea.id === ideaId)
+        return idea ? idea.content : ''
+    }
+})
 
 // 废弃灵感
 const discardIdea = async (index) => {

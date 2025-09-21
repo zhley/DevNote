@@ -7,7 +7,7 @@ export interface Todo {
   finished: boolean
   created_at: string
   completed_at?: string
-  idea_id?: string
+  idea_id?: number
 }
 
 export interface Bug {
