@@ -1985,8 +1985,10 @@ const syncBlockToProgress = async (block, blockIndex) => {
 
 // 编辑Bug函数
 const editBug = (bug, bugIndex) => {
-    // 检查是否存在关联的工作区块
-    const associatedBlock = blocks.find(block => block.id === bug.blockId)
+    // 检查是否存在关联的工作区块（通过related_id关联）
+    const associatedBlock = blocks.find(block => 
+        block.type === 'bug' && block.related_id === bug.id
+    )
     
     if (associatedBlock) {
         // 如果存在关联块，定位到该块
@@ -2028,36 +2030,42 @@ const focusToBlock = (blockId) => {
 }
 
 // 为现有Bug创建关联的工作区块
-const createBugBlockForBug = (bug, bugIndex) => {
-    // 构造块内容
-    let content = bug.title
-    if (bug.description) {
-        content += '\n' + bug.description
+const createBugBlockForBug = async (bug, bugIndex) => {
+    try {
+        // 构造块内容
+        let content = bug.title
+        if (bug.description) {
+            content += '\n' + bug.description
+        }
+        if (bug.additional_info) {
+            content += '\n' + bug.additional_info
+        }
+        
+        // 创建新块
+        const newBlock = {
+            id: generateId(),
+            type: 'bug',
+            content: content,
+            related_id: bug.id, // 设置关联ID
+            created_at: new Date().toISOString()
+        }
+        
+        // 保存到数据库
+        await BlockAPI.create(newBlock)
+        
+        // 添加到工作区
+        blocks.unshift(newBlock)
+        
+        // 定位到新创建的块
+        nextTick(() => {
+            focusToBlock(newBlock.id)
+        })
+        
+        ElMessage.success('已创建关联的Bug块')
+    } catch (error) {
+        console.error('创建Bug块失败:', error)
+        ElMessage.error('创建Bug块失败')
     }
-    if (bug.additionalInfo) {
-        content += '\n' + bug.additionalInfo
-    }
-    
-    // 创建新块
-    const newBlock = {
-        id: generateId(),
-        type: 'bug',
-        content: content,
-        isDefault: false
-    }
-    
-    // 添加到工作区
-    blocks.unshift(newBlock)
-    
-    // 更新Bug的blockId关联
-    bug.blockId = newBlock.id
-    
-    // 定位到新创建的块
-    nextTick(() => {
-        focusToBlock(newBlock.id)
-    })
-    
-    ElMessage.success('已创建关联的Bug块')
 }
 
 
