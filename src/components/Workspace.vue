@@ -177,6 +177,7 @@
                                     </el-icon>
                                 </el-button>
                                 <el-button 
+                                    v-if="idea.status === 'pending'"
                                     type="danger" 
                                     size="small" 
                                     text
@@ -1295,9 +1296,19 @@ const getIdeaTitleById = (ideaId) => {
 }
 
 // 废弃灵感
-const discardIdea = (index) => {
-    ideas[index].status = 'discarded'
-    ElMessage.success('灵感已废弃')
+const discardIdea = async (index) => {
+    try {
+        const idea = ideas[index]
+        idea.status = 'discarded'
+        
+        // 同步状态更新到数据库
+        await IdeaAPI.update(idea.id, { status: 'discarded' })
+        
+        ElMessage.success('灵感已废弃')
+    } catch (error) {
+        console.error('废弃灵感失败:', error)
+        ElMessage.error('废弃灵感失败: ' + error.message)
+    }
 }
 
 // 切换灵感内容展开状态
