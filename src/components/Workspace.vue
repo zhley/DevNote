@@ -1887,6 +1887,18 @@ const syncBlockToProgress = async (block, blockIndex) => {
             content: newContent
         }
         
+        // 在保存之前，检查是否已经存在今天的进度项
+        if (!todayProgress.value) {
+            const todayString = today.toDateString()
+            const existingTodayProgress = progresses.find(progress => {
+                const progressDate = progress.date instanceof Date ? progress.date : new Date(progress.date)
+                return progressDate.toDateString() === todayString
+            })
+            if (existingTodayProgress) {
+                todayProgress.value = existingTodayProgress
+            }
+        }
+        
         // 使用数据库保存或更新今日进度
         const savedProgress = await ProgressAPI.createOrUpdate(progressData)
         
