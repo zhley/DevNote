@@ -71,7 +71,7 @@ async function createTables() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       content TEXT DEFAULT '',
-      status TEXT DEFAULT 'active',
+      status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `)
@@ -226,7 +226,7 @@ export class IdeaAPI {
     const database = await getDatabase()
     const result = await database.execute(
       'INSERT INTO ideas (title, content, status) VALUES (?, ?, ?)',
-      [idea.title, idea.content || '', idea.status || 'active']
+      [idea.title, idea.content || '', idea.status || 'pending']
     )
     const id = result.lastInsertId
     if (id === undefined) {

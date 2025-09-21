@@ -24,7 +24,7 @@ export interface Idea {
   id?: number
   title: string
   content: string
-  status: 'active' | 'in-progress' | 'completed' | 'discarded'
+  status: 'pending' | 'in-progress' | 'implemented' | 'discarded'
   created_at: string
 }
 

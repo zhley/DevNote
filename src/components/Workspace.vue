@@ -1769,7 +1769,7 @@ const syncBlockToIdea = async (block, blockIndex) => {
             const newIdea = {
                 title: title,
                 content: content,
-                status: 'active',
+                status: 'pending',
                 created_at: new Date().toISOString()
             }
             
