@@ -1310,55 +1310,56 @@ const toggleIdeaExpansion = (index) => {
 }
 
 // 加入待办
-const addToTodo = (index) => {
-    const idea = ideas[index]
-    idea.status = 'in-progress'
-    
-    // 创建新的工作区块 - 按照用户思路重构
-    const newBlock = {
-        id: generateId(),
-        type: 'todo',
-        content: `**${idea.title}**\n`
+const addToTodo = async (index) => {
+    try {
+        const idea = ideas[index]
+        idea.status = 'in-progress'
+        
+        // 更新灵感状态到数据库
+        await IdeaAPI.update(idea.id, { status: 'in-progress' })
+        
+        // 创建新的工作区块 - 按照用户思路重构
+        const newBlock = {
+            id: generateId(),
+            type: 'todo',
+            content: `**${idea.title}**\n`,
+            created_at: new Date().toISOString()
+        }
+        
+        // 创建对应的待办事项
+        const newTodo = {
+            title: idea.title,
+            content: '', // 初始为空，等待工作区块编辑
+            priority: 2,
+            finished: false,
+            created_at: new Date().toISOString(),
+            idea_id: idea.id // 关联灵感ID，用于状态同步
+        }
+        
+        // 保存待办事项到数据库
+        const savedTodo = await TodoAPI.create(newTodo)
+        
+        // 设置工作区块的关联ID
+        newBlock.related_id = savedTodo.id
+        
+        // 保存工作区块到数据库
+        await BlockAPI.create(newBlock)
+        
+        // 添加到本地数组
+        blocks.push(newBlock)
+        todos.unshift({ 
+            ...savedTodo,
+            createdAt: new Date(savedTodo.created_at),
+            completedAt: null
+        })
+        
+        focusToBlock(newBlock.id)
+        
+        ElMessage.success('已加入待办清单并创建工作区块')
+    } catch (error) {
+        console.error('加入待办失败:', error)
+        ElMessage.error('加入待办失败: ' + error.message)
     }
-    
-    // 创建对应的待办事项
-    const newTodo = {
-        title: idea.title,
-        content: '', // 初始为空，等待工作区块编辑
-        priority: 2,
-        finished: false,
-        createdAt: new Date(),
-        completedAt: null,
-        idea_id: idea.id, // 关联灵感ID，用于状态同步
-    }
-    
-    // 添加到数组
-    blocks.push(newBlock)
-    todos.unshift(newTodo)
-    
-    // 设置为编辑模式并聚焦
-    editingBlockId.value = newBlock.id
-    
-    // 等待DOM更新后聚焦到新区域
-    nextTick(() => {
-        setTimeout(() => {
-            const blockElement = blockRefs.get(newBlock.id)
-            if (blockElement) {
-                blockElement.textContent = newBlock.content
-                blockElement.focus()
-                
-                // 设置光标到末尾
-                const range = document.createRange()
-                const selection = window.getSelection()
-                range.selectNodeContents(blockElement)
-                range.collapse(false)
-                selection.removeAllRanges()
-                selection.addRange(range)
-            }
-        }, 10)
-    })
-    
-    ElMessage.success('已加入待办清单并创建工作区块')
 }
 
 // 获取状态文本
