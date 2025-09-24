@@ -90,8 +90,8 @@
                             <div 
                                 v-if="expandedTodos.has(todo.title + todo.createdAt)" 
                                 class="todo-details"
-                                v-html="renderMarkdown(todo.content)"
                             >
+                                {{ todo.content }}
                             </div>
                             <div class="todo-meta">
                                 <el-tag 
@@ -465,7 +465,7 @@
             </div>
             <div class="bug-detail-content">
                 <p class="bug-detail-description">{{ selectedBug?.description }}</p>
-                <p class="bug-detail-additional">{{ selectedBug?.additionalInfo }}</p>
+                <p class="bug-detail-additional">{{ selectedBug?.additional_info }}</p>
                 <div class="bug-detail-date">
                     {{ formatDate(selectedBug?.createdAt) }}
                 </div>
@@ -1065,6 +1065,7 @@ const showBugDetail = (bug, index, event) => {
         top: clickY + 'px',
         transform: 'translate(0, 0)'
     }
+    console.log(selectedBug)
 }
 
 // 开始拖动
@@ -2530,6 +2531,7 @@ const handleWindowResize = () => {
     color: #6b7280;
     font-size: 12px;
     line-height: 1.5;
+    white-space: pre-line;
 }
 
 .todo-dates {
@@ -2558,6 +2560,7 @@ const handleWindowResize = () => {
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
+    white-space: pre-line;
 }
 
 .todo-checkbox {
@@ -2710,6 +2713,7 @@ const handleWindowResize = () => {
     overflow: hidden;
     cursor: pointer;
     transition: all 0.15s ease;
+    white-space: pre-line;
 }
 
 .idea-content.expanded {
@@ -2913,6 +2917,7 @@ const handleWindowResize = () => {
     color: #656d76;
     line-height: 1.5;
     word-wrap: break-word;
+    white-space: pre-line;
 }
 
 .bug-detail-date {
