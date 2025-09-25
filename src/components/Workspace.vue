@@ -186,6 +186,20 @@
                                 >
                                     <el-icon><Delete /></el-icon>
                                 </el-button>
+                                <el-button 
+                                    v-if="idea.status === 'discarded'"
+                                    type="success" 
+                                    size="small" 
+                                    text
+                                    @click.stop="undiscardIdea(index)"
+                                    title="取消废弃"
+                                >
+                                    <el-icon>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                                        </svg>
+                                    </el-icon>
+                                </el-button>
                             </div>
                         </div>
                         <p 
@@ -1209,7 +1223,7 @@ const toggleBugStatus = async (index) => {
         const bug = bugs[index]
         if (bug.fixed) {
             bug.completedAt = new Date()
-            ElMessage.success('Bug已标记为修复！')
+            ElMessage.success('Bug已标记为修复')
         } else {
             bug.completedAt = null
             ElMessage.success('Bug已标记为未修复')
@@ -1350,6 +1364,21 @@ const discardIdea = async (index) => {
         ElMessage.success('灵感已废弃')
     } catch (error) {
         ElMessage.error('废弃灵感失败: ' + error.message)
+    }
+}
+
+// 取消废弃灵感
+const undiscardIdea = async (index) => {
+    try {
+        const idea = ideas[index]
+        idea.status = 'pending'
+        
+        // 同步状态更新到数据库
+        await IdeaAPI.update(idea.id, { status: 'pending' })
+        
+        ElMessage.success('已取消废弃，灵感恢复为待验证状态')
+    } catch (error) {
+        ElMessage.error('取消废弃失败: ' + error.message)
     }
 }
 
