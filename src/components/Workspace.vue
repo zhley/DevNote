@@ -502,6 +502,9 @@ import {
     getDatabase, dailyCleanup 
 } from '../api/database'
 
+// 导入状态栏工具
+import { statusBar } from '../utils/statusBar'
+
 // 注入初始化状态
 const isInitialized = inject('isInitialized')
 const initializationError = inject('initializationError')
@@ -862,6 +865,9 @@ const todayProgress = ref(null)
 // 加载所有数据
 const loadAllData = async () => {
     try {
+        // 显示加载状态
+        statusBar.showLoading('正在加载数据...')
+        
         const [todosData, bugsData, ideasData, notesData, progressesData, blocksData] = await Promise.all([
             TodoAPI.getAll(),
             BugAPI.getAll(),
@@ -941,9 +947,14 @@ const loadAllData = async () => {
 
         // 标记数据已加载完成
         isDataLoaded.value = true
+        
+        // 显示加载完成状态
+        statusBar.showReady()
+        statusBar.showSuccess('数据加载完成')
     } catch (error) {
         console.error('Failed to load data:', error)
         ElMessage.error('加载数据失败')
+        statusBar.showError('数据加载失败')
     }
 }
 
@@ -1232,9 +1243,11 @@ const toggleBugStatus = async (index) => {
         // 保存到数据库
         if (bug.id) {
             await BugAPI.update(bug.id, bug)
+            statusBar.showSuccess(bug.fixed ? 'Bug已标记为修复' : 'Bug已标记为未修复')
         }
     } catch (error) {
         ElMessage.error('更新Bug状态失败')
+        statusBar.showError('更新Bug状态失败')
     }
 }
 
@@ -1272,8 +1285,11 @@ const toggleTodo = async (todo) => {
             finished: todo.finished,
             completed_at: todo.completedAt?.toISOString()
         })
+        
+        statusBar.showSuccess(todo.finished ? '任务已完成' : '任务已标记为未完成')
     } catch (error) {
         ElMessage.error('更新失败')
+        statusBar.showError('更新待办事项失败')
     }
 }
 
