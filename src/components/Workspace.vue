@@ -978,11 +978,11 @@ onMounted(async () => {
         
         // 监听快捷添加的创建请求
         listen('create-block-request', async (event) => {
-            const { command, content } = event.payload
+            const { type, content } = event.payload
             
             try {
                 // 调用现有的createBlock函数
-                await createBlock(command, content)
+                await createBlock(type, content)
             } catch (error) {
                 console.error('快捷添加失败:', error)
                 statusBar.showErrorNotification('创建失败: ' + error.message)
@@ -1535,59 +1535,9 @@ const handleCommand = () => {
             title = titleParts.join(' ')
         }
         
-        createBlock(type, title)
-        commandInput.value = ''
-    } else if (input.startsWith('/')) {
-        statusBar.showInfo('无效命令，请使用 /p, /t, /b, /i, /n')
-    }
-}
-
-// 创建新区域 - 支持从快捷窗口调用
-const createBlock = async (input, customContent = null) => {
-    try {
-        let type, title = ''
-        
-        // 如果 input 是字符串，解析命令；如果是对象类型，直接使用
-        if (typeof input === 'string') {
-            // 解析命令和参数
-            const parts = input.split(' ')
-            const command = parts[0].toLowerCase()
-            const typeMap = {
-                '/p': 'progress',
-                '/t': 'todo',
-                '/b': 'bug',
-                '/i': 'idea',
-                '/n': 'note'
-            }
-            
-            if (!typeMap[command]) {
-                throw new Error('无效的命令格式')
-            }
-            
-            type = typeMap[command]
-            
-            // 解析标题参数
-            const titleIndex = parts.findIndex(part => !part.startsWith('-') && part !== command)
-            if (titleIndex !== -1) {
-                const titleParts = []
-                for (let i = titleIndex; i < parts.length; i++) {
-                    if (parts[i].startsWith('-')) break
-                    titleParts.push(parts[i])
-                }
-                title = titleParts.join(' ')
-            }
-        } else {
-            // 直接从对象中获取类型和标题
-            type = input
-            title = customContent || ''
-        }
-        
+        // 根据类型和标题生成内容
         let content = ''
-        if (customContent) {
-            // 使用传入的自定义内容
-            content = customContent
-        } else if (title) {
-            // 使用标题生成内容
+        if (title) {
             if (type === 'progress') {
                 content = `${title}`
             } else {
@@ -1595,6 +1545,16 @@ const createBlock = async (input, customContent = null) => {
             }
         }
         
+        createBlock(type, content)
+        commandInput.value = ''
+    } else if (input.startsWith('/')) {
+        statusBar.showInfo('无效命令，请使用 /p, /t, /b, /i, /n')
+    }
+}
+
+// 创建新区域 - 简化参数：只接收类型和内容
+const createBlock = async (type, content = '') => {
+    try {
         // 按照用户思路重构block数据结构
         const newBlock = {
             id: generateId(),
@@ -1631,8 +1591,10 @@ const createBlock = async (input, customContent = null) => {
         
         // 构建提示消息
         let message = `${getBlockTypeLabel(type)}区域已创建`
-        if (title) {
-            message += `：${title}`
+        if (content) {
+            // 如果内容不为空，显示部分内容作为预览
+            const preview = content.length > 20 ? content.substring(0, 20) + '...' : content
+            message += `：${preview}`
         }
         
         statusBar.showSuccess(message)

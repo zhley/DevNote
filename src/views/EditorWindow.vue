@@ -18,7 +18,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { saveBlockToWorkspace } from '../utils/dataSync'
-import { closeCurrentWindow, getBlockTypeLabel, getPlaceholder, type Command } from '../utils/windowManager'
+import { closeCurrentWindow } from '../utils/windowManager'
+import { getBlockTypeLabel, getPlaceholder, type Command } from '../utils/commandParser'
 
 const route = useRoute()
 const content = ref('')
