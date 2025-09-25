@@ -4,14 +4,16 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
-    Manager, WindowEvent, App, GlobalShortcutManager, WebviewWindowBuilder, WebviewUrl,
+    Manager, WindowEvent, App, WebviewWindowBuilder, WebviewUrl,
 };
+use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, GlobalShortcutExt};
 
 fn setup_system_tray(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     // 创建托盘菜单
     let show_item = MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>)?;
+    let test_command_item = MenuItem::with_id(app, "test_command", "测试命令窗口", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+    let menu = Menu::with_items(app, &[&show_item, &test_command_item, &quit_item])?;
 
     // 创建托盘图标
     let _tray = TrayIconBuilder::with_id("main-tray")
@@ -37,6 +39,11 @@ fn setup_system_tray(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.show();
                     let _ = window.set_focus();
+                }
+            }
+            "test_command" => {
+                if let Err(e) = create_command_window(app) {
+                    eprintln!("Failed to create command window: {}", e);
                 }
             }
             "quit" => {
@@ -114,11 +121,11 @@ fn create_editor_window(app: &tauri::AppHandle, data: &str) -> Result<(), Box<dy
 fn setup_global_shortcuts(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let app_handle = app.handle().clone();
     
-    app.global_shortcut_manager().register("Alt+`", move || {
-        if let Err(e) = create_command_window(&app_handle) {
-            eprintln!("Failed to create command window: {}", e);
-        }
-    })?;
+    // 创建快捷键 Alt+`
+    let shortcut = Shortcut::new(Some(Modifiers::ALT), Code::Backquote);
+    
+    // 注册快捷键
+    app_handle.global_shortcut().register(shortcut)?;
 
     Ok(())
 }
@@ -144,6 +151,16 @@ fn main() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, shortcut, event| {
+                    println!("Global shortcut triggered: {} with event {:?}", shortcut, event);
+                    if let Err(e) = create_command_window(app) {
+                        eprintln!("Failed to create command window: {}", e);
+                    }
+                })
+                .build(),
+        )
         .setup(|app| {
             setup_system_tray(app)?;
             setup_global_shortcuts(app)?;
