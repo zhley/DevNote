@@ -495,6 +495,7 @@ import MarkdownIt from 'markdown-it'
 import { open } from '@tauri-apps/plugin-shell'
 import { mavonEditor } from 'mavon-editor'
 import 'mavon-editor/dist/css/index.css'
+import { listen } from '@tauri-apps/api/event'
 
 // 导入数据库 API
 import { 
@@ -974,6 +975,19 @@ onMounted(async () => {
         
         // 加载所有数据（数据库已在App.vue中初始化）
         await loadAllData()
+        
+        // 监听快捷添加的创建请求
+        listen('create-block-request', async (event) => {
+            const { command, content } = event.payload
+            
+            try {
+                // 调用现有的createBlock函数
+                await createBlock(command, content)
+            } catch (error) {
+                console.error('快捷添加失败:', error)
+                statusBar.showErrorNotification('创建失败: ' + error.message)
+            }
+        })
     } catch (error) {
         console.error('Failed to load workspace data:', error)
         statusBar.showErrorNotification('加载工作区数据失败: ' + error.message)
@@ -1528,11 +1542,52 @@ const handleCommand = () => {
     }
 }
 
-// 创建新区域
-const createBlock = async (type, title = '') => {
+// 创建新区域 - 支持从快捷窗口调用
+const createBlock = async (input, customContent = null) => {
     try {
+        let type, title = ''
+        
+        // 如果 input 是字符串，解析命令；如果是对象类型，直接使用
+        if (typeof input === 'string') {
+            // 解析命令和参数
+            const parts = input.split(' ')
+            const command = parts[0].toLowerCase()
+            const typeMap = {
+                '/p': 'progress',
+                '/t': 'todo',
+                '/b': 'bug',
+                '/i': 'idea',
+                '/n': 'note'
+            }
+            
+            if (!typeMap[command]) {
+                throw new Error('无效的命令格式')
+            }
+            
+            type = typeMap[command]
+            
+            // 解析标题参数
+            const titleIndex = parts.findIndex(part => !part.startsWith('-') && part !== command)
+            if (titleIndex !== -1) {
+                const titleParts = []
+                for (let i = titleIndex; i < parts.length; i++) {
+                    if (parts[i].startsWith('-')) break
+                    titleParts.push(parts[i])
+                }
+                title = titleParts.join(' ')
+            }
+        } else {
+            // 直接从对象中获取类型和标题
+            type = input
+            title = customContent || ''
+        }
+        
         let content = ''
-        if (title) {
+        if (customContent) {
+            // 使用传入的自定义内容
+            content = customContent
+        } else if (title) {
+            // 使用标题生成内容
             if (type === 'progress') {
                 content = `${title}`
             } else {
