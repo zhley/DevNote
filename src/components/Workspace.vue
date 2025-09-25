@@ -369,7 +369,7 @@
                     <el-input
                         ref="commandInputRef"
                         v-model="commandInput"
-                        placeholder="输入 /t 标题 -p 1-3 创建待办，/b /i /n /p 标题 创建其他区域"
+                        placeholder="输入命令"
                         @keydown.enter="handleCommand"
                         clearable
                     />

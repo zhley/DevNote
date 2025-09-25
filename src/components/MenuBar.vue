@@ -31,6 +31,7 @@
             <div class="menu-item" @click="toggleDropdown('help')" :class="{ active: activeDropdown === 'help' }">
                 <span>帮助</span>
                 <div v-if="activeDropdown === 'help'" class="dropdown-menu">
+                    <div class="dropdown-item">文档</div>
                     <div class="dropdown-item">检查更新</div>
                     <div class="dropdown-item">关于</div>
                 </div>
