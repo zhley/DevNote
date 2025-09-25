@@ -106,7 +106,6 @@ fn create_editor_window(app: &tauri::AppHandle, data: &str) -> Result<(), Box<dy
         .center()
         .inner_size(500.0, 300.0)
         .build()?;
-
     // 监听窗口失焦事件，自动关闭
     let window_clone = window.clone();
     window.on_window_event(move |event| {
