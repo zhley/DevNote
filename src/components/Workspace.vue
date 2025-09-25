@@ -1207,8 +1207,6 @@ const handleGlobalClick = (event) => {
 const toggleBugStatus = async (index) => {
     try {
         const bug = bugs[index]
-        bug.fixed = !bug.fixed
-        
         if (bug.fixed) {
             bug.completedAt = new Date()
             ElMessage.success('Bug已标记为修复！')
