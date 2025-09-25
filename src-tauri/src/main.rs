@@ -7,18 +7,6 @@ use tauri::{
     Manager, WindowEvent,
 };
 
-// Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-#[tauri::command]
-fn show_window(window: tauri::Window) {
-    let _ = window.show();
-    let _ = window.set_focus();
-}
-
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_sql::Builder::default().build())
@@ -36,7 +24,6 @@ fn main() {
                 .tooltip("DevNote - 开发笔记")
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
-                .menu_on_left_click(false)
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
@@ -74,7 +61,6 @@ fn main() {
                 let _ = window.hide();
             }
         })
-        .invoke_handler(tauri::generate_handler![greet, show_window])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
