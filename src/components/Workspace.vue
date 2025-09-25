@@ -857,22 +857,57 @@ const loadAllData = async () => {
             BlockAPI.getAll()
         ])
         
-        // 清空并重新填充
-        todos.splice(0, todos.length, ...todosData.map(todo => ({
+        // 获取今天的日期（只取年月日，忽略时分秒）
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        
+        // 判断是否是今天的函数
+        const isToday = (date) => {
+            if (!date) return false
+            const compareDate = new Date(date)
+            compareDate.setHours(0, 0, 0, 0)
+            return compareDate.getTime() === today.getTime()
+        }
+        
+        // 清空并重新填充，添加筛选逻辑
+        // Todo列表：不展示非当天的已完成项
+        const filteredTodos = todosData.filter(todo => {
+            const isFinished = Boolean(todo.finished)
+            if (!isFinished) return true // 未完成的都展示
+            return isToday(todo.completed_at) // 已完成的只展示今天完成的
+        })
+        
+        todos.splice(0, todos.length, ...filteredTodos.map(todo => ({
             ...todo,
             finished: Boolean(todo.finished),
             createdAt: new Date(todo.created_at),
             completedAt: todo.completed_at ? new Date(todo.completed_at) : null
         })))
         
-        bugs.splice(0, bugs.length, ...bugsData.map(bug => ({
+        // Bug列表：不展示非当天的已解决项
+        const filteredBugs = bugsData.filter(bug => {
+            const isFixed = Boolean(bug.fixed)
+            if (!isFixed) return true // 未解决的都展示
+            return isToday(bug.completed_at) // 已解决的只展示今天解决的
+        })
+        
+        bugs.splice(0, bugs.length, ...filteredBugs.map(bug => ({
             ...bug,
             fixed: Boolean(bug.fixed),
             createdAt: new Date(bug.created_at),
             completedAt: bug.completed_at ? new Date(bug.completed_at) : null
         })))
         
-        ideas.splice(0, ideas.length, ...ideasData.map(idea => ({
+        // Idea列表：不展示非当天的已废弃和已实施项
+        const filteredIdeas = ideasData.filter(idea => {
+            // 如果status为'discarded'(已废弃)或'implemented'(已实施)，检查是否是今天
+            if (idea.status === 'discarded' || idea.status === 'implemented') {
+                return isToday(idea.updated_at || idea.created_at)
+            }
+            return true // 其他状态的都展示
+        })
+        
+        ideas.splice(0, ideas.length, ...filteredIdeas.map(idea => ({
             ...idea,
             createdAt: new Date(idea.created_at)
         })))
