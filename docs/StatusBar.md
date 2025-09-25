@@ -12,7 +12,7 @@
 │                   Workspace (自适应)                     │
 │                                                         │
 ├─────────────────────────────────────────────────────────┤
-│      StatusBar (固定高度24px)      │        时间          │
+│   StatusBar (固定高度24px) - 状态信息（左对齐）               │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -27,19 +27,15 @@ import { statusBar } from '../utils/statusBar'
 
 #### 设置状态信息
 ```javascript
-// 在指定位置显示消息
-statusBar.setStatus('left', '正在保存...', 3000)  // 3秒后自动清除
-statusBar.setStatus('center', '操作完成')
-statusBar.setStatus('right', '连接中')
+// 显示消息
+statusBar.setStatus('正在保存...', 3000)  // 3秒后自动清除
+statusBar.setStatus('操作完成')           // 持续显示直到被覆盖
 
 // 清除状态
-statusBar.clearStatus('left')    // 清除左侧状态
-statusBar.clearStatus('center')  // 清除中间状态
-statusBar.clearStatus('right')   // 清除右侧状态
-statusBar.clearStatus('all')     // 清除所有状态
+statusBar.clearStatus()                  // 清除状态，恢复为"就绪"
 
 // 临时状态（3秒后自动清除）
-statusBar.setTempStatus('center', '保存成功')
+statusBar.setTempStatus('保存成功')
 ```
 
 ### 3. 预定义快捷方法
@@ -64,11 +60,13 @@ statusBar.showReady()
 statusBar.clear()
 ```
 
-### 4. 状态栏区域说明
+### 4. 状态栏说明
 
-- **左侧区域 (left)**：通常显示应用状态，如"就绪"、"加载中"等
-- **中间区域 (center)**：显示操作反馈，如成功、失败消息
-- **右侧区域 (right)**：显示系统信息，右端固定显示当前时间
+状态栏采用简洁的单一显示区域设计：
+- **统一显示区域**：所有状态信息都在同一区域显示，左对齐
+- **默认状态**：显示"就绪"
+- **信息覆盖**：新的状态信息会覆盖之前的内容
+- **自动清理**：临时状态会在指定时间后自动恢复为"就绪"
 
 ### 5. 使用示例
 
@@ -90,7 +88,7 @@ const loadData = async () => {
 // 在操作完成时
 const saveDocument = async () => {
     try {
-        statusBar.setStatus('left', '保存中...')
+        statusBar.setStatus('保存中...')
         
         await save()
         

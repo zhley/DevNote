@@ -14,45 +14,45 @@ export const setStatusBarInstance = (instance: StatusBarInstance) => {
 }
 
 // 设置状态信息
-export const setStatus = (position: string, message: string, duration = 0) => {
+export const setStatus = (message: string, duration = 0) => {
     if (statusBarInstance && statusBarInstance.setStatus) {
-        statusBarInstance.setStatus(position, message, duration)
+        statusBarInstance.setStatus('', message, duration)
     }
 }
 
 // 清除状态信息
-export const clearStatus = (position: string) => {
+export const clearStatus = () => {
     if (statusBarInstance && statusBarInstance.clearStatus) {
-        statusBarInstance.clearStatus(position)
+        statusBarInstance.clearStatus('')
     }
 }
 
 // 设置临时状态（3秒后自动清除）
-export const setTempStatus = (position: string, message: string) => {
+export const setTempStatus = (message: string) => {
     if (statusBarInstance && statusBarInstance.setTempStatus) {
-        statusBarInstance.setTempStatus(position, message)
+        statusBarInstance.setTempStatus('', message)
     }
 }
 
 // 预定义的快捷方法
 export const statusBar = {
     // 显示加载状态
-    showLoading: (message = '加载中...') => setStatus('left', message),
+    showLoading: (message = '加载中...') => setStatus(message),
     
     // 显示成功状态
-    showSuccess: (message = '操作成功') => setTempStatus('center', message),
+    showSuccess: (message = '操作成功') => setTempStatus(message),
     
     // 显示错误状态
-    showError: (message = '操作失败') => setTempStatus('center', message),
+    showError: (message = '操作失败') => setTempStatus(message),
     
     // 显示信息
-    showInfo: (message: string) => setTempStatus('center', message),
+    showInfo: (message: string) => setTempStatus(message),
     
     // 显示就绪状态
-    showReady: () => setStatus('left', '就绪'),
+    showReady: () => setStatus('就绪'),
     
     // 清除所有状态
-    clear: () => clearStatus('all'),
+    clear: () => clearStatus(),
     
     // 直接调用方法
     setStatus,
