@@ -134,6 +134,8 @@ export async function newProject(): Promise<string | null> {
   await createEmptyFile(filePath)
   currentProjectPath.value = filePath
   await writeConfig({ lastProjectPath: filePath })
+  // 打开后立即切换到新项目并刷新页面
+  window.location.reload()
   return filePath
 }
 
@@ -149,6 +151,8 @@ export async function openProject(): Promise<string | null> {
   if (!(await exists(filePath))) return null
   currentProjectPath.value = filePath
   await writeConfig({ lastProjectPath: filePath })
+  // 打开后立即切换到新项目并刷新页面
+  window.location.reload()
   return filePath
 }
 
