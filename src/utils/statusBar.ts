@@ -34,6 +34,21 @@ export const setTempStatus = (message: string) => {
     }
 }
 
+// 错误通知函数（需要在组件中设置）
+let showErrorNotification: ((message: string, title?: string) => void) | null = null
+
+// 设置错误通知函数
+export const setErrorNotificationHandler = (handler: (message: string, title?: string) => void) => {
+    showErrorNotification = handler
+}
+
+// 显示错误通知
+export const showError = (message: string, title = '错误') => {
+    if (showErrorNotification) {
+        showErrorNotification(message, title)
+    }
+}
+
 // 预定义的快捷方法
 export const statusBar = {
     // 显示加载状态
@@ -57,7 +72,10 @@ export const statusBar = {
     // 直接调用方法
     setStatus,
     clearStatus,
-    setTempStatus
+    setTempStatus,
+    
+    // 错误通知
+    showErrorNotification: showError
 }
 
 export default statusBar

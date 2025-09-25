@@ -490,7 +490,7 @@
 <script setup>
 import { ref, reactive, nextTick, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import { Delete, ArrowUp, MoreFilled } from '@element-plus/icons-vue'
-import { ElMessage, ElNotification } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
 import { open } from '@tauri-apps/plugin-shell'
 import { mavonEditor } from 'mavon-editor'
@@ -503,7 +503,7 @@ import {
 } from '../api/database'
 
 // 导入状态栏工具
-import { statusBar } from '../utils/statusBar'
+import { statusBar, setErrorNotificationHandler } from '../utils/statusBar'
 
 // 注入初始化状态
 const isInitialized = inject('isInitialized')
@@ -740,12 +740,7 @@ const handleNoteContentSave = async (value, render) => {
                 temporaryTab.value.lastModified = new Date()
             }
         } catch (error) {
-            ElNotification({
-                title: '错误',
-                message: '保存笔记失败',
-                type: 'error',
-                duration: 0
-            })
+            statusBar.showErrorNotification('保存笔记失败')
         }
     }
 }
@@ -827,12 +822,7 @@ const handleLinkClick = (event) => {
         
         // 使用Tauri API在系统默认浏览器中打开链接
         open(url).catch((error) => {
-            ElNotification({
-                title: '错误',
-                message: '无法打开链接',
-                type: 'error',
-                duration: 0
-            })
+            statusBar.showErrorNotification('无法打开链接')
         })
     }
 }
@@ -963,12 +953,7 @@ const loadAllData = async () => {
         statusBar.showSuccess('数据加载完成')
     } catch (error) {
         console.error('Failed to load data:', error)
-        ElNotification({
-            title: '错误',
-            message: '加载数据失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('加载数据失败')
         statusBar.showError('数据加载失败')
     }
 }
@@ -983,12 +968,7 @@ onMounted(async () => {
         
         if (initializationError.value) {
             console.error('App initialization failed:', initializationError.value)
-            ElNotification({
-                title: '初始化错误',
-                message: '应用初始化失败: ' + initializationError.value,
-                type: 'error',
-                duration: 0
-            })
+            statusBar.showErrorNotification('应用初始化失败: ' + initializationError.value, '初始化错误')
             return
         }
         
@@ -996,12 +976,7 @@ onMounted(async () => {
         await loadAllData()
     } catch (error) {
         console.error('Failed to load workspace data:', error)
-        ElNotification({
-            title: '错误',
-            message: '加载工作区数据失败: ' + error.message,
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('加载工作区数据失败: ' + error.message)
     }
 })
 
@@ -1269,12 +1244,7 @@ const toggleBugStatus = async (index) => {
             statusBar.showSuccess(bug.fixed ? 'Bug已标记为修复' : 'Bug已标记为未修复')
         }
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '更新Bug状态失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('更新Bug状态失败')
         statusBar.showError('更新Bug状态失败')
     }
 }
@@ -1314,12 +1284,7 @@ const toggleTodo = async (todo) => {
         
         statusBar.showSuccess(todo.finished ? '任务已完成' : '任务已标记为未完成')
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '更新失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('更新失败')
         statusBar.showError('更新待办事项失败')
     }
 }
@@ -1410,12 +1375,7 @@ const discardIdea = async (index) => {
         
         statusBar.showSuccess('灵感已废弃')
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '废弃灵感失败: ' + error.message,
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('废弃灵感失败: ' + error.message)
     }
 }
 
@@ -1430,12 +1390,7 @@ const undiscardIdea = async (index) => {
         
         statusBar.showSuccess('已取消废弃，灵感恢复为待验证状态')
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '取消废弃失败: ' + error.message,
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('取消废弃失败: ' + error.message)
     }
 }
 
@@ -1496,12 +1451,7 @@ const addToTodo = async (index) => {
         
         statusBar.showSuccess('已加入待办清单并创建工作区块')
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '加入待办失败: ' + error.message,
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('加入待办失败: ' + error.message)
     }
 }
 
@@ -1632,12 +1582,7 @@ const createBlock = async (type, title = '') => {
         
         statusBar.showSuccess(message)
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '创建失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('创建失败')
     }
 }
 
@@ -1795,12 +1740,7 @@ const handleBlockKeydown = async (event, index) => {
                 
                 statusBar.showSuccess(`${blockType}区域已删除`)
             } catch (error) {
-                ElNotification({
-                    title: '错误',
-                    message: '删除失败',
-                    type: 'error',
-                    duration: 0
-                })
+                statusBar.showErrorNotification('删除失败')
             }
         }
     }
@@ -1880,12 +1820,7 @@ const syncBlockToTodo = async (block, blockIndex) => {
             statusBar.showSuccess('已添加到待办清单')
         }
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '同步待办事项失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('同步待办事项失败')
     }
 }
 
@@ -1938,12 +1873,7 @@ const syncBlockToIdea = async (block, blockIndex) => {
             statusBar.showSuccess('已添加到灵感池')
         }
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '同步灵感失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('同步灵感失败')
     }
 }
 
@@ -2002,12 +1932,7 @@ const syncBlockToBug = async (block, blockIndex) => {
             statusBar.showSuccess('已添加到Bug列表')
         }
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '同步Bug失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('同步Bug失败')
     }
 }
 
@@ -2064,12 +1989,7 @@ const syncBlockToNote = async (block, blockIndex) => {
             statusBar.showSuccess('已添加到笔记')
         }
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '同步笔记失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('同步笔记失败')
     }
 }
 
@@ -2147,12 +2067,7 @@ const syncBlockToProgress = async (block, blockIndex) => {
         }
         
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '更新今日进度失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('更新今日进度失败')
     }
 }
 
@@ -2234,12 +2149,7 @@ const createBugBlockForBug = async (bug, bugIndex) => {
         
         statusBar.showSuccess('已创建关联的Bug块')
     } catch (error) {
-        ElNotification({
-            title: '错误',
-            message: '创建Bug块失败',
-            type: 'error',
-            duration: 0
-        })
+        statusBar.showErrorNotification('创建Bug块失败')
     }
 }
 

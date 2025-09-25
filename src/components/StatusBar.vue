@@ -6,7 +6,8 @@
 
 <script setup>
 import { ref, inject } from 'vue'
-import { setStatusBarInstance } from '../utils/statusBar'
+import { setStatusBarInstance, setErrorNotificationHandler } from '../utils/statusBar'
+import { ElNotification } from 'element-plus'
 
 // 注入全局状态管理
 const statusBarState = inject('statusBarState')
@@ -48,6 +49,16 @@ setStatusBarInstance({
     setStatus,
     clearStatus,
     setTempStatus
+})
+
+// 设置错误通知处理器
+setErrorNotificationHandler((message, title = '错误') => {
+    ElNotification({
+        title,
+        message,
+        type: 'error',
+        duration: 0
+    })
 })
 </script>
 
