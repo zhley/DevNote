@@ -2,13 +2,13 @@
     <div 
         class="command-window" 
         :class="{ expanded: showEditor }"
-        @keydown.enter="executeCommand" 
         @keydown.escape="closeWindow"
     >
         <input 
             ref="commandInput" 
             v-model="command" 
             placeholder="输入命令" 
+            @keydown.enter="executeCommand" 
         />
 
         <div v-if="showEditor" class="editor-section">
@@ -71,7 +71,7 @@ const executeCommand = async () => {
 }
 
 const handleBlur = () => {
-    closeWindow()
+    // closeWindow()
 }
 
 const closeWindow = async () => {
@@ -123,25 +123,18 @@ onUnmounted(() => {
 
 <style scoped>
 .command-window {
-    padding: 8px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
 .command-window input {
-    width: 100%;
+    flex: 1;
     border: none;
-    outline: none;
     font-size: 14px;
     padding: 4px 0;
     background: transparent;
-    flex-shrink: 0;
 }
 
 .command-window input::placeholder {
