@@ -90,10 +90,10 @@ fn create_editor_window(app: tauri::AppHandle, params: EditorParams) -> Result<(
     if let Some(existing_window) = app.get_webview_window("editor") {
         let _ = existing_window.close();
     }
-
+    eprint!("aaaaa");
     // 创建新的编辑窗口
     let editor_window = WebviewWindowBuilder::new(&app, "editor", WebviewUrl::App("index.html?window=editor".into()))
-        .title("")
+        .title("1")
         .resizable(false)
         .decorations(true)
         .always_on_top(true)
@@ -103,7 +103,7 @@ fn create_editor_window(app: tauri::AppHandle, params: EditorParams) -> Result<(
         .inner_size(500.0, 300.0)
         .build()
         .map_err(|e| format!("Failed to create window: {}", e))?;
-
+    eprint!("pppp");
     editor_window.emit("init-editor", params).map_err(|e| e.to_string())?;
     Ok(())
 }
