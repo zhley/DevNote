@@ -1,12 +1,13 @@
 {
   "identifier": "quickadd",
   "description": "Quick add windows capabilities",
-  "windows": ["command", "editor"],
+  "windows": ["command"],
   "permissions": [
     "core:window:allow-close",
     "core:window:allow-hide",
     "core:window:allow-show",
     "core:window:allow-set-focus",
+    "core:window:allow-set-size",
     "core:event:allow-listen",
     "core:event:default"
   ]
