@@ -9,7 +9,7 @@
             @blur="handleBlur" 
             @keydown.escape="closeWindow"
             :placeholder="getPlaceholder(blockType)" 
-        />
+        ></textarea>
     </div>
 </template>
 
