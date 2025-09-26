@@ -20,7 +20,7 @@ import { getBlockTypeLabel, getPlaceholder} from '../utils/commandParser'
 import { emit, listen } from '@tauri-apps/api/event'
 
 interface EditorInitData{
-    blockType: string,
+    block_type: string,
     title: string
 }
 
@@ -51,7 +51,7 @@ const closeWindow = async () => {
 onMounted(async () => {
     await listen('init-editor', (event) => {
         const data = event.payload as EditorInitData
-        blockType.value = data.blockType
+        blockType.value = data.block_type
         title.value = data.title
     })
 
