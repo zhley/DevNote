@@ -11,7 +11,7 @@
             @keydown.enter="executeCommand" 
         />
 
-        <div v-if="showEditor" class="editor-section">
+        <div v-if="showEditor" class="editor-section" :class="`block-${blockType}`">
             <div class="editor-header">
                 <span class="block-type">{{ getBlockTypeLabel(blockType) }}</span>
             </div>
@@ -137,7 +137,8 @@ onUnmounted(() => {
 .command-window input {
     border: none;
     outline: none;
-    font-size: 16px;
+    font-size: 14px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', 'Liberation Mono', 'Lucida Console', monospace;
     background: transparent;
     width: 100%;
     box-sizing: border-box;
@@ -189,16 +190,65 @@ onUnmounted(() => {
     border: none;
     outline: none;
     resize: none;
-    font-family: inherit;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
     background: transparent;
     width: 100%;
     box-sizing: border-box;
-    min-height: 0; /* 允许 textarea 缩小到 flex 容器大小 */
+    min-height: 0;
+    padding: 8px 12px;
+    color: #24292f;
+    transition: all 0.15s ease;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .editor-section textarea::placeholder {
-    color: #999;
+    color: #656d76;
+    font-style: italic;
+}
+
+.editor-section textarea:focus {
+    background: rgba(208, 215, 222, 0.1);
+    border-radius: 6px;
+}
+
+/* 根据不同类型显示不同颜色的左边框 - 参考workspace的block样式 */
+.editor-section {
+    position: relative;
+}
+
+.editor-section::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 24px; /* 从header下方开始 */
+    bottom: 0;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    z-index: 1;
+}
+
+/* 不同类型的颜色主题 - 与workspace保持一致 */
+.editor-section.block-progress::before {
+    background: #28a745; /* 绿色 - 进度 */
+}
+
+.editor-section.block-todo::before {
+    background: #007bff; /* 蓝色 - 待办 */
+}
+
+.editor-section.block-bug::before {
+    background: #dc3545; /* 红色 - Bug */
+}
+
+.editor-section.block-idea::before {
+    background: #ffc107; /* 黄色 - 灵感 */
+}
+
+.editor-section.block-note::before {
+    background: #6f42c1; /* 紫色 - 笔记 */
 }
 </style>
