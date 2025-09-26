@@ -95,7 +95,7 @@ fn create_editor_window(app: tauri::AppHandle, params: EditorParams) -> Result<(
     let editor_window = WebviewWindowBuilder::new(&app, "editor", WebviewUrl::App("index.html?window=editor".into()))
         .title("")
         .resizable(false)
-        .decorations(false)
+        .decorations(true)
         .always_on_top(true)
         .skip_taskbar(true)
         .focused(true)
@@ -122,9 +122,12 @@ fn setup_global_shortcuts(app: &mut App) -> Result<(), Box<dyn std::error::Error
 
 fn handle_window_event(window: &tauri::Window, event: &WindowEvent) {
     if let WindowEvent::CloseRequested { api, .. } = event {
-        // 阻止窗口关闭，改为隐藏
-        api.prevent_close();
-        let _ = window.hide();
+        // 只对主窗口阻止关闭并隐藏，其他窗口正常关闭
+        if window.label() == "main" {
+            api.prevent_close();
+            let _ = window.hide();
+        }
+        // command 和 editor 窗口允许正常关闭
     }
 }
 

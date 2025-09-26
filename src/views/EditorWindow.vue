@@ -48,16 +48,13 @@ const closeWindow = async () => {
     closeCurrentWindow()
 }
 
-onMounted(async () => {
-    console.log('EditorWindow mounted')
-    
-    // 设置默认值，防止组件无响应
+onMounted(() => {
+    // 设置默认值
     blockType.value = 'note'
     
-    // 先设置监听器
-    await listen('init-editor', (event) => {
+    // 监听初始化事件
+    listen('init-editor', (event) => {
         const data = event.payload as EditorInitData
-        console.log('Received init-editor event:', data)
         blockType.value = data.block_type
         title.value = data.title
         
@@ -67,19 +64,10 @@ onMounted(async () => {
         }
     })
     
-    // 无论是否收到事件，都要聚焦编辑器
+    // 聚焦编辑器
     setTimeout(() => {
-        console.log('Setting focus to editor')
         contentEditor.value?.focus()
-        
-        // 如果有预填充内容，将光标移到末尾
-        if (content.value) {
-            const length = content.value.length
-            contentEditor.value?.setSelectionRange(length, length)
-        }
-    }, 200)
-    
-    console.log('EditorWindow setup complete')
+    }, 100)
 })
 </script>
 
