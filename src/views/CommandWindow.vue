@@ -1,22 +1,32 @@
 <template>
-    <div class="command-window" :class="{ expanded: showEditor }">
-        <input ref="commandInput" v-model="command" @keydown.enter="executeCommand" @keydown.escape="closeWindow"
-            @blur="handleBlur" placeholder="输入命令" />
+    <div 
+        class="command-window" 
+        :class="{ expanded: showEditor }"
+        @keydown.enter="executeCommand" 
+        @keydown.escape="closeWindow"
+    >
+        <input 
+            ref="commandInput" 
+            v-model="command" 
+            placeholder="输入命令" 
+        />
 
         <div v-if="showEditor" class="editor-section">
             <div class="editor-header">
                 <span class="block-type">{{ getBlockTypeLabel(blockType) }}</span>
             </div>
-            <textarea ref="contentEditor" v-model="content" @blur="handleEditorBlur" @keydown.escape="closeWindow"
-                :placeholder="getPlaceholder(blockType)"></textarea>
+            <textarea 
+                ref="contentEditor"
+                v-model="content"
+                :placeholder="getPlaceholder(blockType)">
+            </textarea>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import { parseCommand, getBlockTypeLabel, getPlaceholder } from '../utils/commandParser'
-import { closeCurrentWindow } from '../utils/windowManager'
 import { emit } from '@tauri-apps/api/event'
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
 
@@ -44,7 +54,7 @@ const executeCommand = async () => {
         // 调整窗口大小
         try {
             const currentWindow = getCurrentWindow()
-            await currentWindow.setSize(new LogicalSize(500, 300))
+            await currentWindow.setSize(new LogicalSize(400, 300))
         } catch (error) {
             console.error('Failed to resize window:', error)
         }
@@ -61,16 +71,7 @@ const executeCommand = async () => {
 }
 
 const handleBlur = () => {
-    if (!showEditor.value) {
-        // 只有在没有展开编辑区时才关闭
-        setTimeout(() => {
-            closeCurrentWindow()
-        }, 100)
-    }
-}
-
-const handleEditorBlur = async () => {
-    // closeWindow()
+    closeWindow()
 }
 
 const closeWindow = async () => {
@@ -87,11 +88,36 @@ const closeWindow = async () => {
     closeCurrentWindow()
 }
 
-onMounted(() => {
+const closeCurrentWindow = async () => {
+    try {
+        const currentWindow = getCurrentWindow()
+        await currentWindow.close()
+    } catch (error) {
+        console.error('Failed to close current window:', error)
+    }
+}
+
+let focusChangeListener: (() => void) | undefined
+
+onMounted(async () => {
     // 自动聚焦到输入框
     nextTick(() => {
         commandInput.value?.focus()
     })
+
+    const currentWindow = await getCurrentWindow()
+    focusChangeListener = await currentWindow.onFocusChanged((event) => {
+        const isFocused = event.payload
+        if(!isFocused){
+            handleBlur()
+        }
+    })
+})
+
+onUnmounted(() => {
+    if (focusChangeListener) {
+        focusChangeListener();
+    }
 })
 </script>
 
