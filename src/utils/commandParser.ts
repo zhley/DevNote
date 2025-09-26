@@ -36,17 +36,6 @@ export function parseCommand(input: string): Command | null {
   }
 }
 
-export function getBlockTypeLabel(type: string): string {
-  const labels = {
-    'todo': '待办',
-    'idea': '灵感',
-    'bug': 'Bug',
-    'note': '笔记',
-    'progress': '进度'
-  }
-  return labels[type as keyof typeof labels] || '未知'
-}
-
 export function getPlaceholder(type: string): string {
   const placeholders = {
     'todo': '输入待办事项内容...',

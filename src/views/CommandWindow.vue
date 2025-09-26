@@ -11,10 +11,7 @@
             @keydown.enter="executeCommand" 
         />
 
-        <div v-if="showEditor" class="editor-section" :class="`block-${blockType}`">
-            <div class="editor-header">
-                <span class="block-type">{{ getBlockTypeLabel(blockType) }}</span>
-            </div>
+        <div v-if="showEditor" class="editor-section" :class="`block-${blockType}`" :data-type="blockType">
             <textarea 
                 ref="contentEditor"
                 v-model="content"
@@ -26,7 +23,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
-import { parseCommand, getBlockTypeLabel, getPlaceholder } from '../utils/commandParser'
+import { parseCommand, getPlaceholder } from '../utils/commandParser'
 import { emit } from '@tauri-apps/api/event'
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window'
 
@@ -173,18 +170,6 @@ onUnmounted(() => {
     min-height: 0; /* 允许 flex 子元素缩小 */
 }
 
-.editor-header {
-    margin-bottom: 8px;
-    font-size: 12px;
-    color: #666;
-    font-weight: 500;
-    flex-shrink: 0;
-}
-
-.block-type {
-    color: #409eff;
-}
-
 .editor-section textarea {
     flex: 1;
     border: none;
@@ -193,16 +178,18 @@ onUnmounted(() => {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     font-size: 14px;
     line-height: 1.6;
-    background: transparent;
+    background: white;
     width: 100%;
     box-sizing: border-box;
     min-height: 0;
-    padding: 8px 12px;
+    padding: 12px;
     color: #24292f;
     transition: all 0.15s ease;
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: pre-wrap;
+    border-radius: 0 0 6px 6px;
+    margin-top: 16px; /* 为左上角标签留出空间 */
 }
 
 .editor-section textarea::placeholder {
@@ -211,44 +198,77 @@ onUnmounted(() => {
 }
 
 .editor-section textarea:focus {
-    background: rgba(208, 215, 222, 0.1);
-    border-radius: 6px;
+    background: white;
+    box-shadow: inset 0 1px 0 rgba(208, 215, 222, 0.2);
 }
 
-/* 根据不同类型显示不同颜色的左边框 - 参考workspace的block样式 */
+/* 完全参照workspace的block-item样式 */
 .editor-section {
     position: relative;
+    border-radius: 6px;
+    background: #ffffff;
+    margin-bottom: 12px;
+    transition: all 0.15s ease;
+    border: 1px solid #d0d7de; /* 默认边框颜色 */
 }
 
 .editor-section::before {
-    content: '';
+    content: attr(data-type);
     position: absolute;
-    left: 0;
-    top: 24px; /* 从header下方开始 */
-    bottom: 0;
-    width: 3px;
-    border-radius: 0 2px 2px 0;
-    z-index: 1;
+    top: -8px;
+    left: 8px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 500;
+    background: #ffffff;
+    border-radius: 4px;
+    z-index: 2;
+    line-height: 1.2;
 }
 
-/* 不同类型的颜色主题 - 与workspace保持一致 */
+/* 不同类型的边框和标签颜色主题 - 与workspace保持一致 */
+.editor-section.block-progress {
+    border-color: #28a745; /* 绿色边框 */
+}
+
 .editor-section.block-progress::before {
-    background: #28a745; /* 绿色 - 进度 */
+    color: #28a745; /* 绿色文字 */
+    background: #f6f8fa; /* 与容器背景相同 */
+}
+
+.editor-section.block-todo {
+    border-color: #007bff; /* 蓝色边框 */
 }
 
 .editor-section.block-todo::before {
-    background: #007bff; /* 蓝色 - 待办 */
+    color: #007bff; /* 蓝色文字 */
+    background: #ffffff;
+}
+
+.editor-section.block-bug {
+    border-color: #dc3545; /* 红色边框 */
 }
 
 .editor-section.block-bug::before {
-    background: #dc3545; /* 红色 - Bug */
+    color: #dc3545; /* 红色文字 */
+    background: #f6f8fa;
+}
+
+.editor-section.block-idea {
+    border-color: #ffc107; /* 黄色边框 */
 }
 
 .editor-section.block-idea::before {
-    background: #ffc107; /* 黄色 - 灵感 */
+    color: #e09900; /* 深一点的黄色文字，提高可读性 */
+    background: #f6f8fa;
+}
+
+.editor-section.block-note {
+    border-color: #6f42c1; /* 紫色边框 */
 }
 
 .editor-section.block-note::before {
-    background: #6f42c1; /* 紫色 - 笔记 */
+    color: #6f42c1; /* 紫色文字 */
+    background: #f6f8fa;
 }
 </style>

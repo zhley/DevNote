@@ -1,7 +1,7 @@
 <template>
     <div class="editor-window">
         <div class="editor-header">
-            <span class="block-type">{{ getBlockTypeLabel(blockType) }}</span>
+            <span class="block-type">{{ blockType }}</span>
         </div>
         <textarea 
             ref="contentEditor" 
@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { closeCurrentWindow } from '../utils/windowManager'
-import { getBlockTypeLabel, getPlaceholder} from '../utils/commandParser'
+import { getPlaceholder} from '../utils/commandParser'
 import { emit, listen } from '@tauri-apps/api/event'
 
 interface EditorInitData{
