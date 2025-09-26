@@ -81,7 +81,7 @@ fn create_command_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::erro
 #[derive(Debug, Deserialize, Serialize, Clone)]
 struct EditorParams{
     block_type: String,
-    title: String
+    title: Option<String>
 }
 
 #[tauri::command]

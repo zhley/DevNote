@@ -5,8 +5,10 @@ import { Command } from './commandParser'
 export async function createEditorWindow(command: Command) {
     try {
         await invoke('create_editor_window', {
-            block_type: command.type,
-            title: 'title' in command ? command.title : ''
+            params: {
+                block_type: command.type,
+                title: 'title' in command ? command.title : ''
+            }
         })
     } catch (error) {
         console.error('Failed to create editor window:', error)
