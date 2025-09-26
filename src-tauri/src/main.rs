@@ -1,9 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::{Deserialize, Serialize};
 use tauri::{
-    menu::{Menu, MenuItem}, tray::{MouseButton, TrayIconBuilder, TrayIconEvent}, App, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent
+    menu::{Menu, MenuItem}, tray::{MouseButton, TrayIconBuilder, TrayIconEvent}, App, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent
 };
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, GlobalShortcutExt};
 
@@ -78,35 +77,7 @@ fn create_command_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-struct EditorParams{
-    block_type: String,
-    title: Option<String>
-}
-
-#[tauri::command]
-fn create_editor_window(app: tauri::AppHandle, params: EditorParams) -> Result<(), String> {
-    // 检查编辑窗口是否已存在
-    if let Some(existing_window) = app.get_webview_window("editor") {
-        let _ = existing_window.close();
-    }
-    eprint!("aaaaa");
-    // 创建新的编辑窗口
-    let editor_window = WebviewWindowBuilder::new(&app, "editor", WebviewUrl::App("index.html?window=editor".into()))
-        .title("1")
-        .resizable(false)
-        .decorations(true)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .focused(true)
-        .center()
-        .inner_size(500.0, 300.0)
-        .build()
-        .map_err(|e| format!("Failed to create window: {}", e))?;
-    eprint!("pppp");
-    editor_window.emit("init-editor", params).map_err(|e| e.to_string())?;
-    Ok(())
-}
+// EditorParams 和 create_editor_window 已删除，编辑功能合并到 CommandWindow 中
 
 fn setup_global_shortcuts(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let app_handle = app.handle().clone();
@@ -151,7 +122,7 @@ fn main() {
             setup_global_shortcuts(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_editor_window])
+        // 移除编辑器窗口命令处理器
         .on_window_event(handle_window_event)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
