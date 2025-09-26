@@ -6,17 +6,29 @@ import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-const currentWindow = await getCurrentWindow();
+async function initApp() {
+    try {
+        const currentWindow = await getCurrentWindow();
+        
+        let rootComponent;
+        if(currentWindow.label === 'command'){
+            rootComponent = CommandWindow;
+        }else if(currentWindow.label === 'editor'){
+            rootComponent = EditorWindow;
+        }else{
+            rootComponent = App;
+        }
 
-let rootComponent;
-if(currentWindow.label === 'command'){
-    rootComponent = CommandWindow;
-}else if(currentWindow.label === 'editor'){
-    rootComponent = EditorWindow;
-}else{
-    rootComponent = App;
+        const app = createApp(rootComponent);
+        app.use(ElementPlus);
+        app.mount('#app');
+    } catch (error) {
+        console.error('Failed to initialize app:', error);
+        // 如果获取窗口信息失败，默认使用主应用
+        const app = createApp(App);
+        app.use(ElementPlus);
+        app.mount('#app');
+    }
 }
 
-const app = createApp(rootComponent);
-app.use(ElementPlus)
-app.mount('#app')
+initApp();
