@@ -6,7 +6,7 @@
       @keydown.enter="executeCommand"
       @keydown.escape="closeWindow"
       @blur="handleBlur"
-      placeholder="输入命令: /t 待办事项, /i 灵感, /b Bug, /n 笔记, /p 进度"
+      placeholder="输入命令"
     />
   </div>
 </template>
@@ -29,9 +29,6 @@ const executeCommand = async () => {
     } catch (error) {
       console.error('Failed to create editor window:', error)
     }
-  } else {
-    // 输入无效时可以显示提示或关闭窗口
-    closeCurrentWindow()
   }
 }
 

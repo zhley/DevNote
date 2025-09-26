@@ -1,49 +1,46 @@
 <template>
     <div class="editor-window">
         <div class="editor-header">
-            <span class="block-type">{{ getBlockTypeLabel(blockData.type) }}</span>
-            <span v-if="blockData.title" class="block-title">: {{ blockData.title }}</span>
+            <span class="block-type">{{ getBlockTypeLabel(blockType) }}</span>
         </div>
         <textarea 
             ref="contentEditor" 
             v-model="content" 
             @blur="handleBlur" 
             @keydown.escape="closeWindow"
-            :placeholder="getPlaceholder(blockData.type)" 
+            :placeholder="getPlaceholder(blockType)" 
         />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { saveBlockToWorkspace } from '../utils/dataSync'
 import { closeCurrentWindow } from '../utils/windowManager'
-import { getBlockTypeLabel, getPlaceholder, type Command } from '../utils/commandParser'
+import { getBlockTypeLabel, getPlaceholder} from '../utils/commandParser'
+import { emit, listen } from '@tauri-apps/api/event'
 
-const route = useRoute()
+interface EditorInitData{
+    blockType: string,
+    title: string
+}
+
 const content = ref('')
 const contentEditor = ref<HTMLTextAreaElement>()
 
-// 从路由参数获取命令数据
-const blockData = ref<Command>({
-    type: 'todo'
-})
-
-try {
-    if (route.query.data) {
-        blockData.value = JSON.parse(decodeURIComponent(route.query.data as string))
-    }
-} catch (error) {
-    console.error('Failed to parse block data:', error)
-}
+const blockType = ref('')
+const title = ref('')
 
 const handleBlur = async () => {
+    closeWindow()
+}
 
-
+const closeWindow = async () => {
     if (content.value.trim()) {
         try {
-            await saveBlockToWorkspace(blockData.value, content.value)
+            await emit('create-block-request', {
+                type: blockType,
+                content: content
+            })
         } catch (error) {
             console.error('Failed to save block:', error)
         }
@@ -51,14 +48,15 @@ const handleBlur = async () => {
     closeCurrentWindow()
 }
 
-const closeWindow = () => {
-    closeCurrentWindow()
-}
+onMounted(async () => {
+    await listen('init-editor', (event) => {
+        const data = event.payload as EditorInitData
+        blockType.value = data.blockType
+        title.value = data.title
+    })
 
-onMounted(() => {
-    // 如果有标题，预填充到内容中
-    if (blockData.value.title) {
-        content.value = blockData.value.title + '\n'
+    if(title){
+        content.value += (title + "\n")
     }
 
     // 自动聚焦到编辑器

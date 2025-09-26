@@ -1,10 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use serde::{Deserialize, Serialize};
 use tauri::{
-    menu::{Menu, MenuItem},
-    tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
-    Manager, WindowEvent, App, WebviewWindowBuilder, WebviewUrl,
+    menu::{Menu, MenuItem}, tray::{MouseButton, TrayIconBuilder, TrayIconEvent}, App, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent
 };
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, GlobalShortcutExt};
 
@@ -65,7 +64,7 @@ fn create_command_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::erro
     }
 
     // 创建新的命令窗口
-    let window = WebviewWindowBuilder::new(app, "command", WebviewUrl::App("index.html#/command".into()))
+    WebviewWindowBuilder::new(app, "command", WebviewUrl::App("index.html?window=command".into()))
         .title("")
         .resizable(false)
         .fullscreen(false)
@@ -76,27 +75,24 @@ fn create_command_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::erro
         .center()
         .inner_size(400.0, 50.0)
         .build()?;
-
-    // 监听窗口失焦事件，自动关闭
-    let window_clone = window.clone();
-    window.on_window_event(move |event| {
-        if let tauri::WindowEvent::Focused(false) = event {
-            let _ = window_clone.close();
-        }
-    });
-
     Ok(())
 }
 
-fn create_editor_window(app: &tauri::AppHandle, data: &str) -> Result<(), Box<dyn std::error::Error>> {
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct EditorParams{
+    block_type: String,
+    title: String
+}
+
+#[tauri::command]
+fn create_editor_window(app: tauri::AppHandle, params: EditorParams) -> Result<(), String> {
     // 检查编辑窗口是否已存在
     if let Some(existing_window) = app.get_webview_window("editor") {
         let _ = existing_window.close();
     }
 
     // 创建新的编辑窗口
-    let url = format!("index.html#/editor?data={}", urlencoding::encode(data));
-    let window = WebviewWindowBuilder::new(app, "editor", WebviewUrl::App(url.into()))
+    let editor_window = WebviewWindowBuilder::new(&app, "editor", WebviewUrl::App("index.html?window=editor".into()))
         .title("")
         .resizable(false)
         .decorations(false)
@@ -105,15 +101,10 @@ fn create_editor_window(app: &tauri::AppHandle, data: &str) -> Result<(), Box<dy
         .focused(true)
         .center()
         .inner_size(500.0, 300.0)
-        .build()?;
-    // 监听窗口失焦事件，自动关闭
-    let window_clone = window.clone();
-    window.on_window_event(move |event| {
-        if let tauri::WindowEvent::Focused(false) = event {
-            let _ = window_clone.close();
-        }
-    });
+        .build()
+        .map_err(|e| format!("Failed to create window: {}", e))?;
 
+    editor_window.emit("init-editor", params).map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -127,13 +118,6 @@ fn setup_global_shortcuts(app: &mut App) -> Result<(), Box<dyn std::error::Error
     app_handle.global_shortcut().register(shortcut)?;
 
     Ok(())
-}
-
-// Tauri 命令函数
-#[tauri::command]
-fn create_editor_from_command(app: tauri::AppHandle, command_data: String) -> Result<(), String> {
-    create_editor_window(&app, &command_data)
-        .map_err(|e| e.to_string())
 }
 
 fn handle_window_event(window: &tauri::Window, event: &WindowEvent) {
@@ -152,8 +136,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|app, shortcut, event| {
-                    println!("Global shortcut triggered: {} with event {:?}", shortcut, event);
+                .with_handler(|app, _shortcut, _event| {
                     if let Err(e) = create_command_window(app) {
                         eprintln!("Failed to create command window: {}", e);
                     }
@@ -165,7 +148,7 @@ fn main() {
             setup_global_shortcuts(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_editor_from_command])
+        .invoke_handler(tauri::generate_handler![create_editor_window])
         .on_window_event(handle_window_event)
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
