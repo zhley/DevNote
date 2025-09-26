@@ -71,7 +71,7 @@ const executeCommand = async () => {
 }
 
 const handleBlur = () => {
-    // closeWindow()
+    closeWindow()
 }
 
 const closeWindow = async () => {
@@ -127,14 +127,36 @@ onUnmounted(() => {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    padding: 8px;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
 .command-window input {
-    flex: 1;
     border: none;
-    font-size: 14px;
-    padding: 4px 0;
+    outline: none;
+    font-size: 16px;
     background: transparent;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 未展开时，输入框占满整个窗口高度 */
+.command-window:not(.expanded) input {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+
+/* 展开后，输入框保持固定高度 */
+.command-window.expanded input {
+    height: 40px;
+    padding: 8px 0;
+    flex-shrink: 0;
+    border-bottom: 1px solid #eee;
 }
 
 .command-window input::placeholder {
@@ -143,10 +165,11 @@ onUnmounted(() => {
 }
 
 .editor-section {
-    margin-top: 8px;
     flex: 1;
     display: flex;
     flex-direction: column;
+    margin-top: 8px;
+    min-height: 0; /* 允许 flex 子元素缩小 */
 }
 
 .editor-header {
@@ -170,6 +193,9 @@ onUnmounted(() => {
     font-size: 14px;
     line-height: 1.5;
     background: transparent;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 0; /* 允许 textarea 缩小到 flex 容器大小 */
 }
 
 .editor-section textarea::placeholder {
