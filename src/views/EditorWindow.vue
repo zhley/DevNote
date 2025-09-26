@@ -38,8 +38,8 @@ const closeWindow = async () => {
     if (content.value.trim()) {
         try {
             await emit('create-block-request', {
-                type: blockType,
-                content: content
+                type: blockType.value,
+                content: content.value
             })
         } catch (error) {
             console.error('Failed to save block:', error)
@@ -49,26 +49,37 @@ const closeWindow = async () => {
 }
 
 onMounted(async () => {
+    console.log('EditorWindow mounted')
+    
+    // 设置默认值，防止组件无响应
+    blockType.value = 'note'
+    
+    // 先设置监听器
     await listen('init-editor', (event) => {
         const data = event.payload as EditorInitData
+        console.log('Received init-editor event:', data)
         blockType.value = data.block_type
         title.value = data.title
+        
+        // 如果有标题，预填充到内容中
+        if(title.value){
+            content.value = title.value + "\n"
+        }
     })
-
-    if(title){
-        content.value += (title + "\n")
-    }
-
-    // 自动聚焦到编辑器
+    
+    // 无论是否收到事件，都要聚焦编辑器
     setTimeout(() => {
+        console.log('Setting focus to editor')
         contentEditor.value?.focus()
-
+        
         // 如果有预填充内容，将光标移到末尾
         if (content.value) {
             const length = content.value.length
             contentEditor.value?.setSelectionRange(length, length)
         }
-    }, 100)
+    }, 200)
+    
+    console.log('EditorWindow setup complete')
 })
 </script>
 
@@ -81,7 +92,8 @@ onMounted(async () => {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100vh;  /* 使用视口高度确保可见 */
+    min-height: 300px;  /* 最小高度 */
     box-sizing: border-box;
 }
 
