@@ -11,8 +11,11 @@
                 <!-- 左侧导航 -->
                 <div class="settings-sidebar">
                     <div class="sidebar-section">
-                        <div class="nav-item active">
+                        <div class="nav-item" :class="{ active: activeTab === 'hotkeys' }" @click="activeTab = 'hotkeys'">
                             <span class="nav-text">快捷键</span>
+                        </div>
+                        <div class="nav-item" :class="{ active: activeTab === 'appearance' }" @click="activeTab = 'appearance'">
+                            <span class="nav-text">外观</span>
                         </div>
                     </div>
                     
@@ -25,12 +28,9 @@
                 
                 <!-- 右侧内容 -->
                 <div class="settings-main">
-                    <div class="main-header">
-                        <h2>快捷键</h2>
-                    </div>
-                    
                     <div class="settings-content">
-                        <div class="setting-group">
+                        <!-- 快捷键设置 -->
+                        <div v-if="activeTab === 'hotkeys'" class="setting-group">
                             <div class="setting-item">
                                 <div class="setting-info">
                                     <div class="setting-label">快速创建命令窗口</div>
@@ -42,6 +42,22 @@
                                         @blur="saveSettings"
                                         class="hotkey-input"
                                     />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 外观设置 -->
+                        <div v-if="activeTab === 'appearance'" class="setting-group">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label">主题</div>
+                                </div>
+                                <div class="setting-control">
+                                    <select v-model="settings.theme" @change="saveSettings" class="theme-select">
+                                        <option value="light">浅色</option>
+                                        <option value="dark">深色</option>
+                                        <option value="auto">跟随系统</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -62,7 +78,8 @@ const activeTab = ref('hotkeys')
 const settings = ref({
     shortcuts: {
         quickCreate: 'Alt+`'
-    }
+    },
+    theme: 'light'
 })
 
 const show = async () => {
@@ -196,14 +213,15 @@ defineExpose({
 .nav-item {
     display: flex;
     align-items: center;
-    padding: 6px 10px;
+    padding: 4px 10px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
     color: #374151;
     font-size: 13px;
     font-weight: 500;
-    height: 28px;
+    height: 24px;
+    margin-bottom: 2px;
 }
 
 .nav-item.active {
@@ -262,18 +280,6 @@ defineExpose({
     overflow-y: auto;
 }
 
-.main-header {
-    padding: 20px 24px 16px 24px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.main-header h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2937;
-}
-
 .settings-content {
     flex: 1;
     padding: 24px;
@@ -329,6 +335,27 @@ defineExpose({
 }
 
 .hotkey-input:hover {
+    border-color: #9ca3af;
+}
+
+.theme-select {
+    width: 160px;
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #ffffff;
+    color: #374151;
+    transition: all 0.2s ease;
+}
+
+.theme-select:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.theme-select:hover {
     border-color: #9ca3af;
 }
 </style>
