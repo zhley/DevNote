@@ -12,6 +12,7 @@
                     <div class="dropdown-item" @click.stop="handleOpenProject">打开项目文件</div>
                     <div class="dropdown-item" @click.stop="closeDropdown">导出</div>
                     <div class="dropdown-item" @click.stop="closeDropdown">属性</div>
+                    <div class="dropdown-item" @click.stop="closeDropdown">设置</div>
                 </div>
             </div>
             
@@ -30,17 +31,6 @@
                 </div>
             </div>
             
-            <!-- 设置菜单 -->
-            <div class="menu-item" 
-                 @click="toggleDropdown('settings')" 
-                 @mouseenter="handleMouseEnter('settings')" 
-                 :class="{ active: activeDropdown === 'settings' }">
-                <span>设置</span>
-                <div v-if="activeDropdown === 'settings'" class="dropdown-menu">
-                    <div class="dropdown-item" @click.stop="closeDropdown">主题</div>
-                </div>
-            </div>
-
             <div class="menu-item" 
                  @click="toggleDropdown('help')" 
                  @mouseenter="handleMouseEnter('help')" 
