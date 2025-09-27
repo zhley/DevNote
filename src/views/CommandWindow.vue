@@ -3,6 +3,7 @@
         class="command-window" 
         :class="{ expanded: showEditor }"
         @keydown.escape="closeWindow"
+        @mousedown="handleMouseDown"
     >
         <input 
             ref="commandInput" 
@@ -111,6 +112,25 @@ const closeCurrentWindow = async () => {
     }
 }
 
+// 窗口拖拽功能
+const handleMouseDown = async (event: MouseEvent) => {
+    // 如果点击的是输入框或文本区域，不启动拖拽
+    const target = event.target as HTMLElement
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return
+    }
+    
+    // 防止文本选择
+    event.preventDefault()
+    
+    try {
+        const currentWindow = getCurrentWindow()
+        await currentWindow.startDragging()
+    } catch (error) {
+        console.error('Failed to start window dragging:', error)
+    }
+}
+
 let focusChangeListener: (() => void) | undefined
 
 onMounted(async () => {
@@ -156,6 +176,7 @@ onUnmounted(() => {
     background: transparent;
     width: 100%;
     box-sizing: border-box;
+    cursor: text;
 }
 
 /* 未展开时，输入框占满整个窗口高度 */
@@ -206,6 +227,7 @@ onUnmounted(() => {
     overflow-wrap: break-word;
     white-space: pre-wrap;
     border-radius: 6px;
+    cursor: text;
 }
 
 .editor-section textarea::placeholder {
