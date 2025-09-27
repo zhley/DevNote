@@ -1828,7 +1828,11 @@ const syncBlockToTodo = async (block, blockIndex) => {
             
             // 保存到数据库
             const savedTodo = await TodoAPI.create(newTodo)
-            todos.unshift(savedTodo)
+            todos.unshift({
+                ...savedTodo,
+                createdAt: new Date(savedTodo.created_at),
+                completedAt: null
+            })
             
             // 更新block的related_id
             block.related_id = savedTodo.id
@@ -1881,7 +1885,10 @@ const syncBlockToIdea = async (block, blockIndex) => {
             
             // 保存到数据库
             const savedIdea = await IdeaAPI.create(newIdea)
-            ideas.unshift(savedIdea)
+            ideas.unshift({
+                ...savedIdea,
+                createdAt: new Date(savedIdea.created_at)
+            })
             
             // 更新block的related_id
             block.related_id = savedIdea.id
@@ -1940,7 +1947,11 @@ const syncBlockToBug = async (block, blockIndex) => {
             
             // 保存到数据库
             const savedBug = await BugAPI.create(newBug)
-            bugs.unshift(savedBug)
+            bugs.unshift({
+                ...savedBug,
+                createdAt: new Date(savedBug.created_at),
+                completedAt: null
+            })
             
             // 更新block的related_id
             block.related_id = savedBug.id
@@ -1997,7 +2008,11 @@ const syncBlockToNote = async (block, blockIndex) => {
             
             // 保存到数据库
             const savedNote = await NoteAPI.create(newNote)
-            notes.unshift(savedNote)
+            notes.unshift({
+                ...savedNote,
+                createdAt: new Date(savedNote.created_at),
+                lastModified: new Date(savedNote.last_modified)
+            })
             
             // 更新block的related_id
             block.related_id = savedNote.id
