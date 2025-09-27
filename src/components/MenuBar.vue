@@ -12,7 +12,7 @@
                     <div class="dropdown-item" @click.stop="handleOpenProject">打开项目文件</div>
                     <div class="dropdown-item" @click.stop="closeDropdown">导出</div>
                     <div class="dropdown-item" @click.stop="closeDropdown">属性</div>
-                    <div class="dropdown-item" @click.stop="closeDropdown">设置</div>
+                    <div class="dropdown-item" @click.stop="openSettings">设置</div>
                 </div>
             </div>
             
@@ -46,6 +46,8 @@
         
         <!-- 关于对话框 -->
         <AboutDialog ref="aboutDialogRef" />
+        <!-- 设置对话框 -->
+        <SettingsDialog ref="settingsDialogRef" />
     </div>
 </template>
 
@@ -54,12 +56,14 @@ import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
 import { ElMessage } from 'element-plus'
 import { newProject, openProject, getCurrentProjectPath } from '../api/project'
 import AboutDialog from './AboutDialog.vue'
+import SettingsDialog from './SettingsDialog.vue'
 
 // 注入 workspace 引用
 const workspaceRef = inject('workspaceRef', null)
 
 const activeDropdown = ref(null)
 const aboutDialogRef = ref(null)
+const settingsDialogRef = ref(null)
 
 // 侧边栏状态计算属性
 const sidebarVisible = computed(() => {
@@ -129,6 +133,12 @@ const handleOpenProject = async () => {
 const showAboutDialog = () => {
     closeDropdown()
     aboutDialogRef.value?.show()
+}
+
+// 显示设置对话框
+const openSettings = () => {
+    closeDropdown()
+    settingsDialogRef.value?.show()
 }
 </script>
 
