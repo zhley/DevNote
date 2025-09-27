@@ -56,7 +56,7 @@
         </div>
 
         <!-- 左侧内容区域 -->
-        <div v-if="sidebarVisible" class="sidebar-content">
+        <div v-if="activeTab !== ''" class="sidebar-content">
             <!-- 待办清单区域 -->
             <div v-if="activeTab === 'todo'" class="todo-list">
                 <div class="section-header">
@@ -318,7 +318,7 @@
 
         <!-- 分隔线 -->
         <div 
-            v-if="sidebarVisible"
+            v-if="activeTab !== ''"
             class="resizer left-resizer" 
             @mousedown="startResize('left', $event)"
         ></div>
@@ -545,7 +545,6 @@ const startLeftWidth = ref(0)
 
 // 侧边栏状态
 const activeTab = ref('todo')
-const sidebarVisible = ref(true)
 
 // 当前选中的笔记
 const selectedNote = ref(null)
@@ -587,15 +586,14 @@ const workspaceStyle = computed(() => ({
 
 // 设置活动标签
 const setActiveTab = (tab) => {
-    // 如果点击的是当前激活的标签，切换侧边栏显示状态
-    if (activeTab.value === tab && sidebarVisible.value) {
-        sidebarVisible.value = false
+    // 如果点击的是当前激活的标签，收起侧边栏（设置为空字符串）
+    if (activeTab.value === tab) {
+        activeTab.value = ''
         return
     }
     
-    // 否则设置为激活标签并显示侧边栏
+    // 否则设置为激活标签
     activeTab.value = tab
-    sidebarVisible.value = true
     
     if (tab === 'notes') {
         // 点击笔记工具栏时，进入笔记模式
@@ -609,7 +607,13 @@ const setActiveTab = (tab) => {
 
 // 切换侧边栏显示状态
 const toggleSidebar = () => {
-    sidebarVisible.value = !sidebarVisible.value
+    if (activeTab.value === '') {
+        // 如果侧边栏已收起，展开到上一个标签（默认为todo）
+        activeTab.value = 'todo'
+    } else {
+        // 如果侧边栏已展开，收起侧边栏
+        activeTab.value = ''
+    }
 }
 
 // 单击选择笔记（临时标签）
@@ -2276,7 +2280,7 @@ const handleWindowResize = () => {
 // 暴露给父组件的方法和状态
 defineExpose({
     toggleSidebar,
-    sidebarVisible
+    activeTab
 })
 </script>
 

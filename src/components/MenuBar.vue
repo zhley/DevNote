@@ -10,8 +10,8 @@
                 <div v-if="activeDropdown === 'file'" class="dropdown-menu">
                     <div class="dropdown-item" @click.stop="handleNewProject">新建项目文件</div>
                     <div class="dropdown-item" @click.stop="handleOpenProject">打开项目文件</div>
-                    <div class="dropdown-item">导出</div>
-                    <div class="dropdown-item">属性</div>
+                    <div class="dropdown-item" @click.stop="closeDropdown">导出</div>
+                    <div class="dropdown-item" @click.stop="closeDropdown">属性</div>
                 </div>
             </div>
             
@@ -37,7 +37,7 @@
                  :class="{ active: activeDropdown === 'settings' }">
                 <span>设置</span>
                 <div v-if="activeDropdown === 'settings'" class="dropdown-menu">
-                    <div class="dropdown-item">主题</div>
+                    <div class="dropdown-item" @click.stop="closeDropdown">主题</div>
                 </div>
             </div>
 
@@ -47,9 +47,9 @@
                  :class="{ active: activeDropdown === 'help' }">
                 <span>帮助</span>
                 <div v-if="activeDropdown === 'help'" class="dropdown-menu">
-                    <div class="dropdown-item">文档</div>
-                    <div class="dropdown-item">检查更新</div>
-                    <div class="dropdown-item">关于</div>
+                    <div class="dropdown-item" @click.stop="closeDropdown">文档</div>
+                    <div class="dropdown-item" @click.stop="closeDropdown">检查更新</div>
+                    <div class="dropdown-item" @click.stop="closeDropdown">关于</div>
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@ const activeDropdown = ref(null)
 
 // 侧边栏状态计算属性
 const sidebarVisible = computed(() => {
-    return workspaceRef?.value?.sidebarVisible ?? true
+    return workspaceRef?.value?.activeTab !== ''
 })
 
 // 切换侧边栏
@@ -76,6 +76,8 @@ const toggleSidebar = () => {
     if (workspaceRef?.value?.toggleSidebar) {
         workspaceRef.value.toggleSidebar()
     }
+    // 点击菜单项后关闭下拉菜单
+    closeDropdown()
 }
 
 const toggleDropdown = (menuName) => {
