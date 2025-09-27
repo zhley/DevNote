@@ -9,9 +9,8 @@ use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, GlobalShortcutExt}
 fn setup_system_tray(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     // 创建托盘菜单
     let show_item = MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>)?;
-    let test_command_item = MenuItem::with_id(app, "test_command", "测试命令窗口", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show_item, &test_command_item, &quit_item])?;
+    let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
 
     // 创建托盘图标
     let _tray = TrayIconBuilder::with_id("main-tray")
@@ -37,11 +36,6 @@ fn setup_system_tray(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.show();
                     let _ = window.set_focus();
-                }
-            }
-            "test_command" => {
-                if let Err(e) = create_command_window(app) {
-                    eprintln!("Failed to create command window: {}", e);
                 }
             }
             "quit" => {
