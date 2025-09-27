@@ -83,20 +83,22 @@ const handleBlur = () => {
 }
 
 const closeWindow = async () => {
-    if (showEditor.value && content.value.trim()) {
+    if (showEditor.value) {
         saveToWorkspace()
     }
     closeCurrentWindow()
 }
 
 const saveToWorkspace = async () => {
-    try {
-        await emit('create-block-request', {
-            type: blockType.value,
-            content: content.value
-        })
-    } catch (error) {
-        console.error('Failed to save block:', error)
+    if(content.value.trim()){
+        try {
+            await emit('create-block-request', {
+                type: blockType.value,
+                content: content.value
+            })
+        } catch (error) {
+            console.error('Failed to save block:', error)
+        }
     }
 }
 
