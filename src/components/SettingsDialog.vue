@@ -57,8 +57,6 @@
                                         v-model="settings.theme" 
                                         @change="saveSettings" 
                                         class="theme-select"
-                                        size="small"
-                                        popper-class="small-select-dropdown"
                                     >
                                         <el-option value="light" label="浅色" />
                                         <el-option value="dark" label="深色" />
@@ -348,14 +346,4 @@ defineExpose({
     width: 160px;
 }
 
-/* 自定义下拉选项大小 */
-:deep(.small-select-dropdown .el-select-dropdown__item) {
-    padding: 4px 12px;
-    font-size: 13px;
-    line-height: 1.2;
-}
-
-:deep(.small-select-dropdown) {
-    font-size: 13px;
-}
 </style>
