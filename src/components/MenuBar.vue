@@ -49,10 +49,13 @@
                 <div v-if="activeDropdown === 'help'" class="dropdown-menu">
                     <div class="dropdown-item" @click.stop="closeDropdown">文档</div>
                     <div class="dropdown-item" @click.stop="closeDropdown">检查更新</div>
-                    <div class="dropdown-item" @click.stop="closeDropdown">关于</div>
+                    <div class="dropdown-item" @click.stop="showAboutDialog">关于</div>
                 </div>
             </div>
         </div>
+        
+        <!-- 关于对话框 -->
+        <AboutDialog ref="aboutDialogRef" />
     </div>
 </template>
 
@@ -60,11 +63,13 @@
 import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
 import { ElMessage } from 'element-plus'
 import { newProject, openProject, getCurrentProjectPath } from '../api/project'
+import AboutDialog from './AboutDialog.vue'
 
 // 注入 workspace 引用
 const workspaceRef = inject('workspaceRef', null)
 
 const activeDropdown = ref(null)
+const aboutDialogRef = ref(null)
 
 // 侧边栏状态计算属性
 const sidebarVisible = computed(() => {
@@ -128,6 +133,12 @@ const handleOpenProject = async () => {
     if (path) {
         ElMessage.success(`已打开项目: ${path}`)
     }
+}
+
+// 显示关于对话框
+const showAboutDialog = () => {
+    closeDropdown()
+    aboutDialogRef.value?.show()
 }
 </script>
 
