@@ -2,7 +2,10 @@
     <div class="menu-bar">
         <div class="menu-items">
             <!-- 项目菜单 -->
-            <div class="menu-item" @click="toggleDropdown('file')" :class="{ active: activeDropdown === 'file' }">
+            <div class="menu-item" 
+                 @click="toggleDropdown('file')" 
+                 @mouseenter="handleMouseEnter('file')" 
+                 :class="{ active: activeDropdown === 'file' }">
                 <span>项目</span>
                 <div v-if="activeDropdown === 'file'" class="dropdown-menu">
                     <div class="dropdown-item" @click.stop="handleNewProject">新建项目文件</div>
@@ -13,7 +16,10 @@
             </div>
             
             <!-- 视图菜单 -->
-            <div class="menu-item" @click="toggleDropdown('view')" :class="{ active: activeDropdown === 'view' }">
+            <div class="menu-item" 
+                 @click="toggleDropdown('view')" 
+                 @mouseenter="handleMouseEnter('view')" 
+                 :class="{ active: activeDropdown === 'view' }">
                 <span>视图</span>
                 <div v-if="activeDropdown === 'view'" class="dropdown-menu">
                     <div class="dropdown-item">侧边栏</div>
@@ -21,14 +27,20 @@
             </div>
             
             <!-- 设置菜单 -->
-            <div class="menu-item" @click="toggleDropdown('settings')" :class="{ active: activeDropdown === 'settings' }">
+            <div class="menu-item" 
+                 @click="toggleDropdown('settings')" 
+                 @mouseenter="handleMouseEnter('settings')" 
+                 :class="{ active: activeDropdown === 'settings' }">
                 <span>设置</span>
                 <div v-if="activeDropdown === 'settings'" class="dropdown-menu">
                     <div class="dropdown-item">主题</div>
                 </div>
             </div>
 
-            <div class="menu-item" @click="toggleDropdown('help')" :class="{ active: activeDropdown === 'help' }">
+            <div class="menu-item" 
+                 @click="toggleDropdown('help')" 
+                 @mouseenter="handleMouseEnter('help')" 
+                 :class="{ active: activeDropdown === 'help' }">
                 <span>帮助</span>
                 <div v-if="activeDropdown === 'help'" class="dropdown-menu">
                     <div class="dropdown-item">文档</div>
@@ -51,6 +63,14 @@ const toggleDropdown = (menuName) => {
     if (activeDropdown.value === menuName) {
         activeDropdown.value = null
     } else {
+        activeDropdown.value = menuName
+    }
+}
+
+// 处理鼠标悬停事件
+const handleMouseEnter = (menuName) => {
+    // 如果已经有菜单展开，直接切换到当前菜单
+    if (activeDropdown.value && activeDropdown.value !== menuName) {
         activeDropdown.value = menuName
     }
 }
