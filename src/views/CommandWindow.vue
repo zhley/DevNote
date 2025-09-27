@@ -68,7 +68,7 @@ const executeCommand = async () => {
 }
 
 const handleBlur = () => {
-    closeWindow()
+    // closeWindow()
 }
 
 const closeWindow = async () => {
@@ -188,8 +188,7 @@ onUnmounted(() => {
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: pre-wrap;
-    border-radius: 0 0 6px 6px;
-    margin-top: 16px; /* 为左上角标签留出空间 */
+    border-radius: 6px;
 }
 
 .editor-section textarea::placeholder {
@@ -207,68 +206,29 @@ onUnmounted(() => {
     position: relative;
     border-radius: 6px;
     background: #ffffff;
-    margin-bottom: 12px;
     transition: all 0.15s ease;
     border: 1px solid #d0d7de; /* 默认边框颜色 */
 }
 
-.editor-section::before {
-    content: attr(data-type);
-    position: absolute;
-    top: -8px;
-    left: 8px;
-    padding: 2px 6px;
-    font-size: 10px;
-    font-weight: 500;
-    background: #ffffff;
-    border-radius: 4px;
-    z-index: 2;
-    line-height: 1.2;
-}
-
 /* 不同类型的边框和标签颜色主题 - 与workspace保持一致 */
 .editor-section.block-progress {
-    border-color: #28a745; /* 绿色边框 */
-}
-
-.editor-section.block-progress::before {
-    color: #28a745; /* 绿色文字 */
-    background: #f6f8fa; /* 与容器背景相同 */
+    border-color: #1f883d;
 }
 
 .editor-section.block-todo {
-    border-color: #007bff; /* 蓝色边框 */
-}
-
-.editor-section.block-todo::before {
-    color: #007bff; /* 蓝色文字 */
-    background: #ffffff;
+    border-color: #bf8700;
 }
 
 .editor-section.block-bug {
-    border-color: #dc3545; /* 红色边框 */
-}
-
-.editor-section.block-bug::before {
-    color: #dc3545; /* 红色文字 */
-    background: #f6f8fa;
+    border-color: #d1242f;
 }
 
 .editor-section.block-idea {
-    border-color: #ffc107; /* 黄色边框 */
-}
-
-.editor-section.block-idea::before {
-    color: #e09900; /* 深一点的黄色文字，提高可读性 */
-    background: #f6f8fa;
+    border-color: #8250df;
 }
 
 .editor-section.block-note {
-    border-color: #6f42c1; /* 紫色边框 */
+    border-color: #656d76;
 }
 
-.editor-section.block-note::before {
-    color: #6f42c1; /* 紫色文字 */
-    background: #f6f8fa;
-}
 </style>
