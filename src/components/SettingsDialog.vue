@@ -1,50 +1,55 @@
 <template>
-    <el-dialog
-        v-model="visible"
-        title=""
-        width="700px"
-        :before-close="handleClose"
-        :show-close="true"
-        center
-        class="settings-dialog"
-    >
-        <div class="settings-container">
-            <!-- 左侧导航 -->
-            <div class="settings-sidebar">
-                <div class="nav-item active">
-                    <span class="nav-text">快捷键</span>
-                </div>
-                <div class="settings-actions">
-                    <el-button size="small" text @click="openSettingsFile">
-                        📁 配置文件
-                    </el-button>
-                </div>
+    <div v-if="visible" class="settings-overlay" @click="handleOverlayClick">
+        <div class="settings-window" @click.stop>
+            <!-- 窗口标题栏 -->
+            <div class="window-header">
+                <div class="window-title">设置</div>
+                <button class="close-btn" @click="handleClose">×</button>
             </div>
             
-            <!-- 右侧内容 -->
-            <div class="settings-main">
-                <div class="main-header">
-                    <h3>快捷键</h3>
-                </div>
-                <div class="settings-content">
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <span class="setting-name">快速创建命令窗口</span>
+            <div class="settings-container">
+                <!-- 左侧导航 -->
+                <div class="settings-sidebar">
+                    <div class="sidebar-section">
+                        <div class="nav-item active">
+                            <span class="nav-text">快捷键</span>
                         </div>
-                        <div class="setting-control">
-                            <el-input 
-                                v-model="settings.shortcuts.quickCreate" 
-                                placeholder="Alt+`"
-                                @blur="saveSettings"
-                                size="small"
-                                class="hotkey-input"
-                            />
+                    </div>
+                    
+                    <div class="sidebar-footer">
+                        <button class="config-btn" @click="openSettingsFile">
+                            <span class="btn-text">打开配置文件</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 右侧内容 -->
+                <div class="settings-main">
+                    <div class="main-header">
+                        <h2>快捷键</h2>
+                    </div>
+                    
+                    <div class="settings-content">
+                        <div class="setting-group">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label">快速创建命令窗口</div>
+                                </div>
+                                <div class="setting-control">
+                                    <input 
+                                        v-model="settings.shortcuts.quickCreate" 
+                                        placeholder="Alt+`"
+                                        @blur="saveSettings"
+                                        class="hotkey-input"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </el-dialog>
+    </div>
 </template>
 
 <script setup>
@@ -75,6 +80,10 @@ const handleClose = () => {
     visible.value = false
 }
 
+const handleOverlayClick = () => {
+    visible.value = false
+}
+
 const saveSettings = async () => {
     try {
         await saveSettingsToFile(settings.value)
@@ -101,89 +110,200 @@ defineExpose({
 </script>
 
 <style scoped>
+/* 遮罩层 */
+.settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+/* 设置窗口 */
+.settings-window {
+    width: 720px;
+    height: 480px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 窗口标题栏 */
+.window-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.window-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.close-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+/* 主容器 */
 .settings-container {
     display: flex;
-    height: 320px;
-    border: 1px solid #e1e5e9;
-    border-radius: 4px;
+    flex: 1;
     overflow: hidden;
 }
 
 /* 左侧导航 */
 .settings-sidebar {
-    width: 100px;
-    background: #f5f5f5;
-    border-right: 1px solid #e1e5e9;
+    width: 200px;
+    background: #f5f5f7;
+    border-right: 1px solid #d1d5db;
     display: flex;
     flex-direction: column;
-    padding: 8px;
+}
+
+.sidebar-section {
+    padding: 12px 8px;
+    flex: 1;
 }
 
 .nav-item {
-    padding: 6px 8px;
-    background: #409eff;
-    color: white;
-    border-radius: 3px;
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #374151;
+    font-size: 13px;
     font-weight: 500;
-    text-align: center;
-    margin-bottom: 8px;
+    height: 28px;
+}
+
+.nav-item.active {
+    background: #4f46e5;
+    color: white;
+}
+
+.nav-item:hover:not(.active) {
+    background: #e5e7eb;
 }
 
 .nav-text {
-    display: block;
+    flex: 1;
 }
 
-.settings-actions {
-    margin-top: auto;
+.sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid #d1d5db;
+}
+
+.config-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.config-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-icon {
+    margin-right: 6px;
+    font-size: 12px;
+}
+
+.btn-text {
+    flex: 1;
+    text-align: left;
 }
 
 /* 右侧内容 */
 .settings-main {
     flex: 1;
-    background: white;
+    background: #ffffff;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
 .main-header {
-    padding: 16px 20px 12px 20px;
+    padding: 20px 24px 16px 24px;
     border-bottom: 1px solid #f0f0f0;
 }
 
-.main-header h3 {
+.main-header h2 {
     margin: 0;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
-    color: #303133;
+    color: #1f2937;
 }
 
 .settings-content {
     flex: 1;
-    padding: 16px 20px;
+    padding: 24px;
 }
 
-.setting-row {
+.setting-group {
+    margin-bottom: 32px;
+}
+
+.setting-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 12px 0;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid #f9fafb;
 }
 
-.setting-row:last-child {
+.setting-item:last-child {
     border-bottom: none;
 }
 
 .setting-info {
     flex: 1;
-    margin-right: 20px;
+    margin-right: 24px;
 }
 
-.setting-name {
+.setting-label {
     font-size: 14px;
     font-weight: 500;
-    color: #303133;
+    color: #1f2937;
 }
 
 .setting-control {
@@ -191,23 +311,24 @@ defineExpose({
 }
 
 .hotkey-input {
-    width: 140px;
-}
-
-/* Element Plus 对话框样式覆盖 */
-:deep(.settings-dialog .el-dialog) {
+    width: 160px;
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
     border-radius: 6px;
+    font-size: 13px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    background: #ffffff;
+    color: #374151;
+    transition: all 0.2s ease;
 }
 
-:deep(.settings-dialog .el-dialog__header) {
-    display: none;
+.hotkey-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-:deep(.settings-dialog .el-dialog__body) {
-    padding: 0;
-}
-
-:deep(.settings-dialog .el-dialog__footer) {
-    display: none;
+.hotkey-input:hover {
+    border-color: #9ca3af;
 }
 </style>
