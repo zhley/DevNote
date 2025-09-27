@@ -185,8 +185,8 @@ defineExpose({
 }
 
 .close-btn:hover {
-    background: #e0e0e0;
-    color: #333;
+    background: #dbeafe;
+    color: #1e40af;
 }
 
 /* 主容器 */
@@ -225,12 +225,12 @@ defineExpose({
 }
 
 .nav-item.active {
-    background: #4f46e5;
+    background: #3b82f6;
     color: white;
 }
 
 .nav-item:hover:not(.active) {
-    background: #e5e7eb;
+    background: #dbeafe;
 }
 
 .nav-text {
@@ -239,7 +239,7 @@ defineExpose({
 
 .sidebar-footer {
     padding: 12px;
-    border-top: 1px solid #d1d5db;
+    border-top: 1px solid #bfdbfe;
 }
 
 .config-btn {
@@ -257,8 +257,8 @@ defineExpose({
 }
 
 .config-btn:hover {
-    background: #e5e7eb;
-    color: #374151;
+    background: #dbeafe;
+    color: #1e40af;
 }
 
 .btn-icon {
@@ -330,12 +330,12 @@ defineExpose({
 
 .hotkey-input:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .hotkey-input:hover {
-    border-color: #9ca3af;
+    border-color: #60a5fa;
 }
 
 .theme-select {
@@ -347,15 +347,6 @@ defineExpose({
     background: #ffffff;
     color: #374151;
     transition: all 0.2s ease;
-}
-
-.theme-select:focus {
-    outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.theme-select:hover {
-    border-color: #9ca3af;
+    cursor: pointer;
 }
 </style>
