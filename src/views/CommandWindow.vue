@@ -15,8 +15,8 @@
             <textarea 
                 ref="contentEditor"
                 v-model="content"
-                :placeholder="getPlaceholder(blockType)">
-            </textarea>
+                :placeholder="getPlaceholder(blockType)"
+            />
         </div>
     </div>
 </template>
@@ -40,7 +40,6 @@ const executeCommand = async () => {
     if (parsed) {
         if(showEditor.value){
             saveToWorkspace()
-            content.value = ''
         }else{
             // 展开编辑区域
             showEditor.value = true
@@ -54,19 +53,28 @@ const executeCommand = async () => {
         }
         blockType.value = parsed.type
         title.value = 'title' in parsed ? parsed.title || '' : ''
-        // 如果有标题，预填充到内容中
-        if (title.value) {
-            content.value = title.value + "\n"
-        }
-
-        // 聚焦到编辑器
-        nextTick(() => {
-            contentEditor.value?.focus()
-            if (content.value) {
-                const length = content.value.length
-                contentEditor.value?.setSelectionRange(length, length)
-            }
-        })
+        
+        // 使用 setTimeout 延迟设置内容，避免与 DOM 更新冲突
+        setTimeout(() => {
+            const expectedContent = title.value || ''
+            content.value = expectedContent
+            
+            nextTick(() => {
+                if (contentEditor.value) {
+                    // 直接设置 textarea 的 value，绕过 Vue 的响应式系统
+                    contentEditor.value.value = expectedContent
+                    contentEditor.value.focus()
+                    
+                    // 设置光标位置
+                    if (expectedContent) {
+                        const length = expectedContent.length
+                        contentEditor.value.setSelectionRange(length, length)
+                    } else {
+                        contentEditor.value.setSelectionRange(0, 0)
+                    }
+                }
+            })
+        }, 0)
     }
 }
 
