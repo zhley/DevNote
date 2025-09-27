@@ -38,22 +38,25 @@ const title = ref('')
 const executeCommand = async () => {
     const parsed = parseCommand(command.value)
     if (parsed) {
-        // 展开编辑区域
-        showEditor.value = true
+        if(showEditor.value){
+            saveToWorkspace()
+            content.value = ''
+        }else{
+            // 展开编辑区域
+            showEditor.value = true
+            // 调整窗口大小
+            try {
+                const currentWindow = getCurrentWindow()
+                await currentWindow.setSize(new LogicalSize(400, 300))
+            } catch (error) {
+                console.error('Failed to resize window:', error)
+            }
+        }
         blockType.value = parsed.type
         title.value = 'title' in parsed ? parsed.title || '' : ''
-
         // 如果有标题，预填充到内容中
         if (title.value) {
             content.value = title.value + "\n"
-        }
-
-        // 调整窗口大小
-        try {
-            const currentWindow = getCurrentWindow()
-            await currentWindow.setSize(new LogicalSize(400, 300))
-        } catch (error) {
-            console.error('Failed to resize window:', error)
         }
 
         // 聚焦到编辑器
@@ -68,21 +71,25 @@ const executeCommand = async () => {
 }
 
 const handleBlur = () => {
-    // closeWindow()
+    closeWindow()
 }
 
 const closeWindow = async () => {
     if (showEditor.value && content.value.trim()) {
-        try {
-            await emit('create-block-request', {
-                type: blockType.value,
-                content: content.value
-            })
-        } catch (error) {
-            console.error('Failed to save block:', error)
-        }
+        saveToWorkspace()
     }
     closeCurrentWindow()
+}
+
+const saveToWorkspace = async () => {
+    try {
+        await emit('create-block-request', {
+            type: blockType.value,
+            content: content.value
+        })
+    } catch (error) {
+        console.error('Failed to save block:', error)
+    }
 }
 
 const closeCurrentWindow = async () => {
