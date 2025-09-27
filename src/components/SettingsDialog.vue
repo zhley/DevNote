@@ -53,11 +53,17 @@
                                     <div class="setting-label">主题</div>
                                 </div>
                                 <div class="setting-control">
-                                    <select v-model="settings.theme" @change="saveSettings" class="theme-select">
-                                        <option value="light">浅色</option>
-                                        <option value="dark">深色</option>
-                                        <option value="auto">跟随系统</option>
-                                    </select>
+                                    <el-select 
+                                        v-model="settings.theme" 
+                                        @change="saveSettings" 
+                                        class="theme-select"
+                                        size="small"
+                                        popper-class="small-select-dropdown"
+                                    >
+                                        <el-option value="light" label="浅色" />
+                                        <el-option value="dark" label="深色" />
+                                        <el-option value="auto" label="跟随系统" />
+                                    </el-select>
                                 </div>
                             </div>
                         </div>
@@ -340,13 +346,16 @@ defineExpose({
 
 .theme-select {
     width: 160px;
-    padding: 6px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
+}
+
+/* 自定义下拉选项大小 */
+:deep(.small-select-dropdown .el-select-dropdown__item) {
+    padding: 4px 12px;
     font-size: 13px;
-    background: #ffffff;
-    color: #374151;
-    transition: all 0.2s ease;
-    cursor: pointer;
+    line-height: 1.2;
+}
+
+:deep(.small-select-dropdown) {
+    font-size: 13px;
 }
 </style>
