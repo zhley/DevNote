@@ -22,7 +22,11 @@
                  :class="{ active: activeDropdown === 'view' }">
                 <span>视图</span>
                 <div v-if="activeDropdown === 'view'" class="dropdown-menu">
-                    <div class="dropdown-item">侧边栏</div>
+                    <div class="dropdown-item" @click.stop="toggleSidebar">
+                        <span class="menu-check" v-if="sidebarVisible">✓</span>
+                        <span class="menu-check-placeholder" v-else></span>
+                        侧边栏
+                    </div>
                 </div>
             </div>
             
@@ -53,11 +57,26 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed, inject } from 'vue'
 import { ElMessage } from 'element-plus'
 import { newProject, openProject, getCurrentProjectPath } from '../api/project'
 
+// 注入 workspace 引用
+const workspaceRef = inject('workspaceRef', null)
+
 const activeDropdown = ref(null)
+
+// 侧边栏状态计算属性
+const sidebarVisible = computed(() => {
+    return workspaceRef?.value?.sidebarVisible ?? true
+})
+
+// 切换侧边栏
+const toggleSidebar = () => {
+    if (workspaceRef?.value?.toggleSidebar) {
+        workspaceRef.value.toggleSidebar()
+    }
+}
 
 const toggleDropdown = (menuName) => {
     if (activeDropdown.value === menuName) {
@@ -172,6 +191,20 @@ const handleOpenProject = async () => {
 
 .dropdown-item:hover {
     background: #f0f0f0;
+}
+
+.menu-check {
+    display: inline-block;
+    width: 16px;
+    margin-right: 8px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.menu-check-placeholder {
+    display: inline-block;
+    width: 16px;
+    margin-right: 8px;
 }
 
 .dropdown-divider {

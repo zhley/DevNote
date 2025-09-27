@@ -1,7 +1,7 @@
 <template>
     <div class="app-container">
         <MenuBar />
-        <Workspace class="main-content"/>
+        <Workspace ref="workspaceRef" class="main-content"/>
         <StatusBar />
     </div>
 </template>
@@ -18,6 +18,9 @@ import { initDatabase, dailyCleanup } from './api/database'
 const isInitialized = ref(false)
 const initializationError = ref<string | null>(null)
 
+// Workspace 组件引用
+const workspaceRef = ref(null)
+
 // 创建状态栏全局状态管理
 const statusBarState = reactive({
     setStatus: null as ((position: string, message: string, duration?: number) => void) | null,
@@ -29,6 +32,7 @@ const statusBarState = reactive({
 provide('isInitialized', isInitialized)
 provide('initializationError', initializationError)
 provide('statusBarState', statusBarState)
+provide('workspaceRef', workspaceRef)
 
 // 立即开始初始化（不等待mounted）
 const initializeApp = async () => {
