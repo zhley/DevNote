@@ -9,7 +9,7 @@
         <div class="about-content">
             <div class="app-header">
                 <div class="app-icon">
-                    <img src="/tauri.svg" alt="DevNote" width="48" height="48" />
+                    <img src="/DevNote.png" alt="DevNote" width="48" height="48" />
                 </div>
                 <div class="app-info">
                     <h2>DevNote</h2>
