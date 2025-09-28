@@ -138,7 +138,8 @@ const showAboutDialog = () => {
 // 显示设置对话框
 const openSettings = () => {
     closeDropdown()
-    settingsDialogRef.value?.show()
+    // 设置窗口尚不完善，所以注释
+    // settingsDialogRef.value?.show()
 }
 </script>
 
