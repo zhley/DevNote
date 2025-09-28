@@ -243,7 +243,6 @@ defineExpose({
 
 .sidebar-footer {
     padding: 12px;
-    border-top: 1px solid #bfdbfe;
 }
 
 .config-btn {
